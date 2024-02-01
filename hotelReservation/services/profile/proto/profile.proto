@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package profile;
 
+import "context_bus/context_bus.proto";
+
 service Profile {
   rpc GetProfiles(Request) returns (Result);
 }
@@ -9,6 +11,8 @@ service Profile {
 message Request {
   repeated string hotelIds = 1;
   string locale = 2;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Result {
