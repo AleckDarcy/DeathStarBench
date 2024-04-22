@@ -19,7 +19,7 @@ package profile
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import context_bus "github.com/AleckDarcy/reload/core/context_bus/proto"
+import context_bus "github.com/AleckDarcy/ContextBus/proto"
 
 import (
 	context "golang.org/x/net/context"

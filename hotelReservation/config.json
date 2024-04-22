@@ -1,7 +1,7 @@
 {
   "consulAddress": "consul:8500",
   "jaegerAddress": "jaeger:6831",
-  "FrontendPort": "5000",
+  "FrontendPort": "5001",
   "GeoPort": "8083",
   "GeoMongoAddress": "mongodb-geo:27017",
   "ProfilePort": "8081",

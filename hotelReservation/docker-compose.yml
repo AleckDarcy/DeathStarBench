@@ -17,10 +17,10 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_frontend_single_node
-    entrypoint: frontend
+    entrypoint: ./frontend
     container_name: 'hotel_reserv_frontend'
     ports:
-      - "5000:5000"
+      - "5001:5001" # 5000 is used by macOS
     depends_on:
       - consul
     restart: always
@@ -34,7 +34,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_profile_single_node
-    entrypoint: profile
+    entrypoint: ./profile
     container_name: 'hotel_reserv_profile'
     depends_on:
       - mongodb-profile
@@ -45,7 +45,7 @@ services:
   search:
     build: .
     image: hotel_reserv_search_single_node
-    entrypoint: search
+    entrypoint: ./search
     container_name: 'hotel_reserv_search'
     depends_on:
       - consul
@@ -66,7 +66,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_geo_single_node
-    entrypoint: geo
+    entrypoint: ./geo
     container_name: 'hotel_reserv_geo'
     depends_on:
       - mongodb-geo
@@ -82,7 +82,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_rate_single_node
-    entrypoint: rate
+    entrypoint: ./rate
     container_name: 'hotel_reserv_rate'
     depends_on:
       - mongodb-rate
@@ -98,7 +98,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_recommend_single_node
-    entrypoint: recommendation
+    entrypoint: ./recommendation
     container_name: 'hotel_reserv_recommendation'
     depends_on:
       - mongodb-recommendation
@@ -113,7 +113,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_user_single_node
-    entrypoint: user
+    entrypoint: ./user
     container_name: 'hotel_reserv_user'
     depends_on:
       - mongodb-user
@@ -129,7 +129,7 @@ services:
       - LOG_LEVEL
     build: .
     image: hotel_reserv_rsv_single_node
-    entrypoint: reservation
+    entrypoint: ./reservation
     container_name: 'hotel_reserv_reservation'
     depends_on:
       - mongodb-reservation

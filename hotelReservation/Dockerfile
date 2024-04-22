@@ -2,6 +2,7 @@ FROM golang:1.21 as builder
 
 WORKDIR /workspace
 
+COPY config.json config.json
 COPY go.sum go.sum
 COPY go.mod go.mod
 COPY vendor/ vendor/
@@ -28,3 +29,5 @@ COPY --from=builder /go/bin/recommendation .
 COPY --from=builder /go/bin/reservation .
 COPY --from=builder /go/bin/search .
 COPY --from=builder /go/bin/user .
+COPY --from=builder /workspace/config.json .
+COPY --from=builder /workspace/services/frontend/static services/frontend/static
