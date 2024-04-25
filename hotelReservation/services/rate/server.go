@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -84,6 +85,140 @@ func (s *Server) Run() error {
 // Shutdown cleans up any processes
 func (s *Server) Shutdown() {
 	s.Registry.Deregister(s.uuid)
+}
+
+type RoomType struct {
+	BookableRate       float64 `bson:"bookableRate"`
+	Code               string  `bson:"code"`
+	RoomDescription    string  `bson:"roomDescription"`
+	TotalRate          float64 `bson:"totalRate"`
+	TotalRateInclusive float64 `bson:"totalRateInclusive"`
+}
+
+type RatePlan struct {
+	HotelId  string    `bson:"hotelId"`
+	Code     string    `bson:"code"`
+	InDate   string    `bson:"inDate"`
+	OutDate  string    `bson:"outDate"`
+	RoomType *RoomType `bson:"roomType"`
+}
+
+func (s *Server) ResetDataBases() {
+	collection := s.MongoClient.Database("rate-db").Collection("inventory")
+	if err := collection.Drop(context.Background()); err != nil {
+		log.Error().Msgf("Drop Collection inventory from Database rate-db failed: %v\n", err)
+	} else {
+		log.Info().Msg("Drop Collection inventory from Database rate-db succeeded")
+	}
+
+	if err := s.MemcClient.DeleteAll(); err != nil {
+		log.Error().Msgf("Clear memcached fail: %v\n", err)
+	} else {
+		log.Info().Msg("Clear memcached succeeded")
+	}
+
+	newRatePlans := []interface{}{
+		RatePlan{
+			"1",
+			"RACK",
+			"2015-04-09",
+			"2015-04-10",
+			&RoomType{
+				109.00,
+				"KNG",
+				"King sized bed",
+				109.00,
+				123.17,
+			},
+		},
+		RatePlan{
+			"2",
+			"RACK",
+			"2015-04-09",
+			"2015-04-10",
+			&RoomType{
+				139.00,
+				"QN",
+				"Queen sized bed",
+				139.00,
+				153.09,
+			},
+		},
+		RatePlan{
+			"3",
+			"RACK",
+			"2015-04-09",
+			"2015-04-10",
+			&RoomType{
+				109.00,
+				"KNG",
+				"King sized bed",
+				109.00,
+				123.17,
+			},
+		},
+	}
+
+	for i := 7; i <= 80; i++ {
+		if i%3 != 0 {
+			continue
+		}
+
+		hotelID := strconv.Itoa(i)
+
+		endDate := "2015-04-"
+		if i%2 == 0 {
+			endDate = fmt.Sprintf("%s17", endDate)
+		} else {
+			endDate = fmt.Sprintf("%s24", endDate)
+		}
+
+		rate := 109.00
+		rateInc := 123.17
+		if i%5 == 1 {
+			rate = 120.00
+			rateInc = 140.00
+		} else if i%5 == 2 {
+			rate = 124.00
+			rateInc = 144.00
+		} else if i%5 == 3 {
+			rate = 132.00
+			rateInc = 158.00
+		} else if i%5 == 4 {
+			rate = 232.00
+			rateInc = 258.00
+		}
+
+		newRatePlans = append(
+			newRatePlans,
+			RatePlan{
+				hotelID,
+				"RACK",
+				"2015-04-09",
+				endDate,
+				&RoomType{
+					rate,
+					"KNG",
+					"King sized bed",
+					rate,
+					rateInc,
+				},
+			},
+		)
+	}
+
+	_, err := collection.InsertMany(context.TODO(), newRatePlans)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+	}
+	log.Info().Msg("Successfully reset rate DB")
+}
+
+func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	log.Info().Msg("reset databases")
+	s.ResetDataBases()
+
+	return new(pb.Result), nil
 }
 
 // GetRates gets rates for hotels for specific date range.

@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package reservation;
 
+option go_package = "reservation";
+
 service Reservation {
+  rpc ResetDB(Request) returns (Result);
   // MakeReservation makes a reservation based on given information
   rpc MakeReservation(Request) returns (Result);
   // CheckAvailability checks if given information is available

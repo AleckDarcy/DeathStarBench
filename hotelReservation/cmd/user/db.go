@@ -31,7 +31,7 @@ func initializeDatabase(url string) (*mongo.Client, func()) {
 		sum := sha256.Sum256([]byte(password))
 
 		newUsers = append(newUsers, User{
-			fmt.Sprintf("Cornell_%x", suffix),
+			fmt.Sprintf("User_%x", suffix),
 			fmt.Sprintf("%x", sum),
 		})
 	}

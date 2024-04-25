@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package rate;
 
+option go_package = "rate";
+
 service Rate {
+  rpc ResetDB(Request) returns (Result);
   // GetRates returns rate codes for hotels for a given date range
   rpc GetRates(Request) returns (Result);
 }

@@ -85,6 +85,13 @@ func (s *Server) Shutdown() {
 	s.Registry.Deregister(s.uuid)
 }
 
+func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	log.Info().Msg("reset databases")
+	// do nothing
+
+	return new(pb.Result), nil
+}
+
 // CheckUser returns whether the username and password are correct.
 func (s *Server) CheckUser(ctx context.Context, req *pb.Request) (*pb.Result, error) {
 	res := new(pb.Result)

@@ -139,6 +139,14 @@ func (s *Server) getGprcConn(name string) (*grpc.ClientConn, error) {
 	}
 }
 
+func (s *Server) ResetDB(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchResult, error) {
+	log.Info().Msg("reset databases")
+	s.geoClient.ResetDB(ctx, new(geo.Request))
+	s.rateClient.ResetDB(ctx, new(rate.Request))
+
+	return new(pb.SearchResult), nil
+}
+
 // Nearby returns ids of nearby hotels ordered by ranking algo
 func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchResult, error) {
 	// find nearby hotels

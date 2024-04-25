@@ -20,6 +20,8 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tls"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tracing"
 	"github.com/opentracing/opentracing-go"
+
+	_ "github.com/AleckDarcy/ContextBus"
 )
 
 // Server implements frontend service
@@ -67,6 +69,7 @@ func (s *Server) Run() error {
 	log.Trace().Msg("frontend before mux")
 	mux := tracing.NewServeMux(s.Tracer)
 	mux.Handle("/", http.FileServer(http.Dir("services/frontend/static")))
+	mux.Handle("/reset", http.HandlerFunc(s.resetHandler))
 	mux.Handle("/hotels", http.HandlerFunc(s.searchHandler))
 	mux.Handle("/recommendations", http.HandlerFunc(s.recommendHandler))
 	mux.Handle("/user", http.HandlerFunc(s.userHandler))
@@ -151,6 +154,19 @@ func (s *Server) getGprcConn(name string) (*grpc.ClientConn, error) {
 	}
 }
 
+func (s *Server) resetHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info().Msg("reset databases starts")
+	ctx := r.Context()
+	s.searchClient.ResetDB(ctx, &search.NearbyRequest{})
+	s.profileClient.ResetDB(ctx, &profile.Request{})
+	s.recommendationClient.ResetDB(ctx, &recommendation.Request{})
+	s.reservationClient.ResetDB(ctx, &reservation.Request{})
+	s.userClient.ResetDB(ctx, &user.Request{})
+
+	log.Info().Msg("reset databases ends")
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "ok"})
+}
+
 func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx := r.Context()
@@ -210,7 +226,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		RoomNumber:   1,
 	})
 	if err != nil {
-		log.Error().Msg("SearchHandler CheckAvailability failed")
+		log.Error().Msg("SearchHandler CheckAvailability failed: " + err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

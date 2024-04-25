@@ -17,7 +17,8 @@ COPY tune/ tune/
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install -ldflags="-s -w" -mod=vendor ./cmd/...
 
-FROM gcr.io/distroless/static:nonroot
+#FROM gcr.io/distroless/static:nonroot
+FROM golang:1.21.9-alpine3.19
 
 WORKDIR /
 

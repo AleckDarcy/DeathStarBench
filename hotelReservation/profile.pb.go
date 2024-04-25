@@ -88,12 +88,12 @@ func (m *Result) GetHotels() []*Hotel {
 }
 
 type Hotel struct {
-	Id          string   `protobuf:"bytes,1,opt,name=id" bson:"id,omitempty"`
-	Name        string   `protobuf:"bytes,2,opt,name=name" bson:"name,omitempty"`
-	PhoneNumber string   `protobuf:"bytes,3,opt,name=phoneNumber" bson:"phoneNumber,omitempty"`
-	Description string   `protobuf:"bytes,4,opt,name=description" bson:"description,omitempty"`
-	Address     *Address `protobuf:"bytes,5,opt,name=address" bson:"address,omitempty"`
-	Images      []*Image `protobuf:"bytes,6,rep,name=images" bson:"images,omitempty"`
+	Id          string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name        string   `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	PhoneNumber string   `protobuf:"bytes,3,opt,name=phoneNumber" json:"phoneNumber,omitempty"`
+	Description string   `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`
+	Address     *Address `protobuf:"bytes,5,opt,name=address" json:"address,omitempty"`
+	Images      []*Image `protobuf:"bytes,6,rep,name=images" json:"images,omitempty"`
 }
 
 func (m *Hotel) Reset()                    { *m = Hotel{} }
@@ -144,14 +144,14 @@ func (m *Hotel) GetImages() []*Image {
 }
 
 type Address struct {
-	StreetNumber string  `protobuf:"bytes,1,opt,name=streetNumber" bson:"streetNumber,omitempty"`
-	StreetName   string  `protobuf:"bytes,2,opt,name=streetName" bson:"streetName,omitempty"`
-	City         string  `protobuf:"bytes,3,opt,name=city" bson:"city,omitempty"`
-	State        string  `protobuf:"bytes,4,opt,name=state" bson:"state,omitempty"`
-	Country      string  `protobuf:"bytes,5,opt,name=country" bson:"country,omitempty"`
-	PostalCode   string  `protobuf:"bytes,6,opt,name=postalCode" bson:"postalCode,omitempty"`
-	Lat          float32 `protobuf:"fixed32,7,opt,name=lat" bson:"lat,omitempty"`
-	Lon          float32 `protobuf:"fixed32,8,opt,name=lon" bson:"lon,omitempty"`
+	StreetNumber string  `protobuf:"bytes,1,opt,name=streetNumber" json:"streetNumber,omitempty"`
+	StreetName   string  `protobuf:"bytes,2,opt,name=streetName" json:"streetName,omitempty"`
+	City         string  `protobuf:"bytes,3,opt,name=city" json:"city,omitempty"`
+	State        string  `protobuf:"bytes,4,opt,name=state" json:"state,omitempty"`
+	Country      string  `protobuf:"bytes,5,opt,name=country" json:"country,omitempty"`
+	PostalCode   string  `protobuf:"bytes,6,opt,name=postalCode" json:"postalCode,omitempty"`
+	Lat          float32 `protobuf:"fixed32,7,opt,name=lat" json:"lat,omitempty"`
+	Lon          float32 `protobuf:"fixed32,8,opt,name=lon" json:"lon,omitempty"`
 }
 
 func (m *Address) Reset()                    { *m = Address{} }

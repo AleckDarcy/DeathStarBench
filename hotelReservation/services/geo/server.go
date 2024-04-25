@@ -90,6 +90,13 @@ func (s *Server) Shutdown() {
 	s.Registry.Deregister(s.uuid)
 }
 
+func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	log.Info().Msg("reset databases")
+	// do nothing
+
+	return new(pb.Result), nil
+}
+
 // Nearby returns all hotels within a given distance.
 func (s *Server) Nearby(ctx context.Context, req *pb.Request) (*pb.Result, error) {
 	log.Trace().Msgf("In geo Nearby")

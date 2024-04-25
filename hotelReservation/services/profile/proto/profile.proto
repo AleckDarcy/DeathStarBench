@@ -2,9 +2,12 @@ syntax = "proto3";
 
 package profile;
 
+option go_package = "profile";
+
 import "context_bus/context_bus.proto";
 
 service Profile {
+  rpc ResetDB(Request) returns (Result);
   rpc GetProfiles(Request) returns (Result);
 }
 

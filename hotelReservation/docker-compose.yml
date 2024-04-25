@@ -10,10 +10,12 @@ services:
     restart: always
 
   frontend:
+    env_file:
+      - .env
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - LOG_LEVEL
     build: .
     image: hotel_reserv_frontend_single_node

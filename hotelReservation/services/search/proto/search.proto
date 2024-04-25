@@ -2,8 +2,11 @@ syntax = "proto3";
 
 package search;
 
+option go_package = "search";
+
 // Search service returns best hotel chocies for a user.
 service Search {
+  rpc ResetDB(NearbyRequest) returns (SearchResult);
   rpc Nearby(NearbyRequest) returns (SearchResult);
   // rpc City(CityRequest) returns (SearchResult);
 }

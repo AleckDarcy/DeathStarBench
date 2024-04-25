@@ -85,6 +85,13 @@ func (s *Server) Shutdown() {
 	s.Registry.Deregister(s.uuid)
 }
 
+func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	log.Info().Msg("reset databases")
+	// do nothing
+
+	return new(pb.Result), nil
+}
+
 // GiveRecommendation returns recommendations within a given requirement.
 func (s *Server) GetRecommendations(ctx context.Context, req *pb.Request) (*pb.Result, error) {
 	res := new(pb.Result)

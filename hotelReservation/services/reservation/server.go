@@ -87,6 +87,87 @@ func (s *Server) Shutdown() {
 	s.Registry.Deregister(s.uuid)
 }
 
+type Reservation struct {
+	HotelId      string `bson:"hotelId"`
+	CustomerName string `bson:"customerName"`
+	InDate       string `bson:"inDate"`
+	OutDate      string `bson:"outDate"`
+	Number       int    `bson:"number"`
+}
+
+type Number struct {
+	HotelId string `bson:"hotelId"`
+	Number  int    `bson:"numberOfRoom"`
+}
+
+func (s *Server) ResetDataBases() {
+	database := s.MongoClient.Database("reservation-db")
+	if err := database.Collection("reservation").Drop(context.Background()); err != nil {
+		log.Error().Msgf("Drop Collection reservation from Database reservation-db failed: %v\n", err)
+	} else {
+		log.Info().Msg("Drop Collection reservation from Database reservation-db succeeded")
+	}
+
+	if err := database.Collection("number").Drop(context.Background()); err != nil {
+		log.Error().Msgf("Drop Collection number from Database reservation-db fail: %v\n", err)
+	} else {
+		log.Info().Msg("Drop Collection number from Database reservation-db succeeded")
+	}
+
+	if err := s.MemcClient.DeleteAll(); err != nil {
+		log.Error().Msgf("Clear memcached fail: %v\n", err)
+	} else {
+		log.Info().Msg("Clear memcached succeeded")
+	}
+
+	newReservations := []interface{}{
+		Reservation{"4", "Alice", "2015-04-09", "2015-04-10", 1},
+	}
+
+	newNumbers := []interface{}{
+		Number{"1", 200},
+		Number{"2", 200},
+		Number{"3", 200},
+		Number{"4", 200},
+		Number{"5", 200},
+		Number{"6", 200},
+	}
+
+	for i := 7; i <= 80; i++ {
+		hotelID := strconv.Itoa(i)
+
+		roomNumber := 200
+		if i%3 == 1 {
+			roomNumber = 300
+		} else if i%3 == 2 {
+			roomNumber = 250
+		}
+
+		newNumbers = append(newNumbers, Number{hotelID, roomNumber})
+	}
+
+	resCollection := database.Collection("reservation")
+	numCollection := database.Collection("number")
+
+	_, err := resCollection.InsertMany(context.TODO(), newReservations)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+	}
+
+	_, err = numCollection.InsertMany(context.TODO(), newNumbers)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+	}
+	log.Info().Msg("Successfully reset reservation DB")
+}
+
+func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	log.Info().Msg("reset databases")
+	s.ResetDataBases()
+
+	return new(pb.Result), nil
+}
+
 // MakeReservation makes a reservation based on given information
 func (s *Server) MakeReservation(ctx context.Context, req *pb.Request) (*pb.Result, error) {
 	res := new(pb.Result)
