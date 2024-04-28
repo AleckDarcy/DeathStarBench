@@ -4,6 +4,8 @@ package search;
 
 option go_package = "search";
 
+import "context_bus/context_bus.proto";
+
 // Search service returns best hotel chocies for a user.
 service Search {
   rpc ResetDB(NearbyRequest) returns (SearchResult);
@@ -16,6 +18,8 @@ message NearbyRequest {
   float lon = 2;
   string inDate = 3;
   string outDate = 4;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 // TODO(hw): add city search endpoint
@@ -27,4 +31,6 @@ message NearbyRequest {
 
 message SearchResult {
   repeated string hotelIds = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }

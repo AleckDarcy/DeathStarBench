@@ -4,6 +4,8 @@ package recommendation;
 
 option go_package = "recommendation";
 
+import "context_bus/context_bus.proto";
+
 service Recommendation {
   rpc ResetDB(Request) returns (Result);
   // GetRecommendations returns recommended hotels for a given requirement
@@ -15,8 +17,12 @@ message Request {
   string require = 1;
   double lat = 2;
   double lon = 3;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Result {
   repeated string HotelIds = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }

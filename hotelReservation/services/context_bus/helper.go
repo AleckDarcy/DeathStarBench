@@ -1,4 +1,4 @@
-package services
+package context_bus
 
 import (
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -8,6 +8,7 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 )
 
+// cheat go mod
 var _ = push.Pusher{}
 var _ = cpu.InfoStat{}
 var _ = host.InfoStat{}

@@ -4,6 +4,8 @@ package reservation;
 
 option go_package = "reservation";
 
+import "context_bus/context_bus.proto";
+
 service Reservation {
   rpc ResetDB(Request) returns (Result);
   // MakeReservation makes a reservation based on given information
@@ -18,8 +20,12 @@ message Request {
   string inDate = 3;
   string outDate = 4;
   int32  roomNumber = 5;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Result {
   repeated string hotelId = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }

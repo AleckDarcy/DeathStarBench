@@ -20,6 +20,8 @@ message Request {
 
 message Result {
   repeated Hotel hotels = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Hotel {

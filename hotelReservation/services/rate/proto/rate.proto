@@ -4,6 +4,8 @@ package rate;
 
 option go_package = "rate";
 
+import "context_bus/context_bus.proto";
+
 service Rate {
   rpc ResetDB(Request) returns (Result);
   // GetRates returns rate codes for hotels for a given date range
@@ -14,10 +16,14 @@ message Request {
   repeated string hotelIds = 1;
   string inDate = 2;
   string outDate = 3;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Result {
   repeated RatePlan ratePlans = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message RatePlan {

@@ -4,6 +4,8 @@ package geo;
 
 option go_package = "geo";
 
+import "context_bus/context_bus.proto";
+
 service Geo {
   rpc ResetDB(Request) returns (Result);
   // Finds the hotels contained nearby the current lat/lon.
@@ -14,8 +16,12 @@ service Geo {
 message Request {
   float lat = 1;
   float lon = 2;
+
+  context_bus.Payload CBPayload = 10001;
 }
 
 message Result {
   repeated string hotelIds = 1;
+
+  context_bus.Payload CBPayload = 10001;
 }
