@@ -15,6 +15,7 @@
 package tracing
 
 import (
+	cb_http "github.com/AleckDarcy/ContextBus/third-party/go/net/http"
 	"net/http"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -24,14 +25,14 @@ import (
 // NewServeMux creates a new TracedServeMux.
 func NewServeMux(tracer opentracing.Tracer) *TracedServeMux {
 	return &TracedServeMux{
-		mux:    http.NewServeMux(),
+		mux:    cb_http.NewServeMux(),
 		tracer: tracer,
 	}
 }
 
 // TracedServeMux is a wrapper around http.ServeMux that instruments handlers for tracing.
 type TracedServeMux struct {
-	mux    *http.ServeMux
+	mux    *cb_http.ServeMux
 	tracer opentracing.Tracer
 }
 

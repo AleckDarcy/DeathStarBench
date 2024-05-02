@@ -6,23 +6,30 @@ import (
 	"net/http"
 	"strconv"
 
-	"google.golang.org/grpc"
-
-	recommendation "github.com/delimitrou/DeathStarBench/hotelreservation/services/recommendation/proto"
-	reservation "github.com/delimitrou/DeathStarBench/hotelreservation/services/reservation/proto"
-	user "github.com/delimitrou/DeathStarBench/hotelreservation/services/user/proto"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 
 	"github.com/delimitrou/DeathStarBench/hotelreservation/dialer"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/registry"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	profile "github.com/delimitrou/DeathStarBench/hotelreservation/services/profile/proto"
+	recommendation "github.com/delimitrou/DeathStarBench/hotelreservation/services/recommendation/proto"
+	reservation "github.com/delimitrou/DeathStarBench/hotelreservation/services/reservation/proto"
 	search "github.com/delimitrou/DeathStarBench/hotelreservation/services/search/proto"
+	user "github.com/delimitrou/DeathStarBench/hotelreservation/services/user/proto"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tls"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tracing"
 	"github.com/opentracing/opentracing-go"
 
-	_ "github.com/AleckDarcy/ContextBus"
+	// _ "github.com/AleckDarcy/ContextBus"
+	"github.com/AleckDarcy/ContextBus"
+	cb "github.com/AleckDarcy/ContextBus/proto"
+	cb_http "github.com/AleckDarcy/ContextBus/third-party/go/net/http"
 )
+
+// cheat go import
+var _ = cb_http.DefaultServeMux
+var _ = tracing.TracedServeMux{}
 
 // Server implements frontend service
 type Server struct {
@@ -67,13 +74,17 @@ func (s *Server) Run() error {
 	log.Info().Msg("Successfull")
 
 	log.Trace().Msg("frontend before mux")
-	mux := tracing.NewServeMux(s.Tracer)
+
+	ContextBus.TurnOn()
+	context_bus.SetDefaultConfigure()
+	mux := cb_http.NewServeMux() // context bus server mux
+	//mux := tracing.NewServeMux(s.Tracer)
 	mux.Handle("/", http.FileServer(http.Dir("services/frontend/static")))
-	mux.Handle("/reset", http.HandlerFunc(s.resetHandler))
-	mux.Handle("/hotels", http.HandlerFunc(s.searchHandler))
-	mux.Handle("/recommendations", http.HandlerFunc(s.recommendHandler))
-	mux.Handle("/user", http.HandlerFunc(s.userHandler))
-	mux.Handle("/reservation", http.HandlerFunc(s.reservationHandler))
+	mux.Handle("/reset", cb_http.NewHandlerFunc(s.resetHandler))
+	mux.Handle("/hotels", cb_http.NewHandlerFunc(s.searchHandler))
+	mux.Handle("/recommendations", cb_http.NewHandlerFunc(s.recommendHandler))
+	mux.Handle("/user", cb_http.NewHandlerFunc(s.userHandler))
+	mux.Handle("/reservation", cb_http.NewHandlerFunc(s.reservationHandler))
 
 	log.Trace().Msg("frontend starts serving")
 
@@ -171,7 +182,22 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx := r.Context()
 
-	log.Trace().Msg("starts searchHandler")
+	// ContextBus
+	cbCtx, cbOK := ContextBus.Preparation(r.Context())
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "starts searchHandler",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("starts searchHandler")
+	}
 
 	// in/out dates from query params
 	inDate, outDate := r.URL.Query().Get("inDate"), r.URL.Query().Get("outDate")
@@ -192,9 +218,34 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	Lon, _ := strconv.ParseFloat(sLon, 32)
 	lon := float32(Lon)
 
-	log.Trace().Msg("starts searchHandler querying downstream")
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "starts searchHandler querying downstream",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("starts searchHandler querying downstream")
+	}
 
-	log.Trace().Msgf("SEARCH [lat: %v, lon: %v, inDate: %v, outDate: %v", lat, lon, inDate, outDate)
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.3",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("SEARCH [lat: %v, lon: %v, inDate: %v, outDate: %v", lat, lon, inDate, outDate),
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("SEARCH [lat: %v, lon: %v, inDate: %v, outDate: %v", lat, lon, inDate, outDate)
+	}
+
 	// search for best hotels
 	searchResp, err := s.searchClient.Nearby(ctx, &search.NearbyRequest{
 		Lat:     lat,
@@ -207,7 +258,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Trace().Msg("SearchHandler gets searchResp")
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.4",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "SearchHandler gets searchResp",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("SearchHandler gets searchResp")
+	}
+
 	//for _, hid := range searchResp.HotelIds {
 	//	log.Trace().Msgf("Search Handler hotelId = %s", hid)
 	//}
@@ -231,8 +295,19 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Trace().Msgf("searchHandler gets reserveResp")
-	log.Trace().Msgf("searchHandler gets reserveResp.HotelId = %s", reservationResp.HotelId)
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.5",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("searchHandler gets reserveResp.HotelId = %s", reservationResp.HotelId),
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("searchHandler gets reserveResp.HotelId = %s", reservationResp.HotelId)
+	}
 
 	// hotel profiles
 	profileResp, err := s.profileClient.GetProfiles(ctx, &profile.Request{
@@ -245,7 +320,19 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Trace().Msg("searchHandler gets profileResp")
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "frontend.searchHandler.6",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "searchHandler gets profileResp",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("searchHandler gets profileResp")
+	}
 
 	json.NewEncoder(w).Encode(geoJSONResponse(profileResp.Hotels))
 }
