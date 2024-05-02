@@ -248,10 +248,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	// search for best hotels
 	searchResp, err := s.searchClient.Nearby(ctx, &search.NearbyRequest{
-		Lat:     lat,
-		Lon:     lon,
-		InDate:  inDate,
-		OutDate: outDate,
+		Lat:       lat,
+		Lon:       lon,
+		InDate:    inDate,
+		OutDate:   outDate,
+		CBPayload: cbCtx.Payload(),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

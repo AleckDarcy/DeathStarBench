@@ -147,10 +147,18 @@ func (c *searchClient) ResetDB(ctx context.Context, in *NearbyRequest, opts ...g
 
 func (c *searchClient) Nearby(ctx context.Context, in *NearbyRequest, opts ...grpc.CallOption) (*SearchResult, error) {
 	out := new(SearchResult)
+
+	// ContextBus
+	fmt.Println("Send /search.Search/Nearby request")
+
 	err := grpc.Invoke(ctx, "/search.Search/Nearby", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
+
+	// ContextBus
+	fmt.Println("Receive /search.Search/Nearby response")
+
 	return out, nil
 }
 
@@ -188,6 +196,13 @@ func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(inter
 	if err := dec(in); err != nil {
 		return nil, err
 	}
+
+	// ContextBus
+	cbFlag := in.CBPayload != nil
+	if cbFlag {
+		fmt.Println("receive /search.Search/Nearby request", in.CBPayload)
+	}
+
 	if interceptor == nil {
 		return srv.(SearchServer).Nearby(ctx, in)
 	}
@@ -198,7 +213,16 @@ func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(inter
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SearchServer).Nearby(ctx, req.(*NearbyRequest))
 	}
-	return interceptor(ctx, in, info, handler)
+	val, err := interceptor(ctx, in, info, handler)
+	// ContextBus
+	if cbFlag { // todo: do payload
+		res := val.(*SearchResult)
+
+		_ = res
+		fmt.Println("send /search.Search/Nearby response", val)
+	}
+
+	return val, err
 }
 
 var _Search_serviceDesc = grpc.ServiceDesc{
