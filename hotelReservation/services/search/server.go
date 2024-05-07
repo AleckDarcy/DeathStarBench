@@ -3,6 +3,9 @@ package search
 import (
 	// "encoding/json"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
+
 	// F"io/ioutil"
 	"net"
 
@@ -64,6 +67,8 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
+	ContextBus.TurnOn("search", "jaeger:6831")
+	context_bus.SetDefaultConfigure()
 	srv := grpc.NewServer(opts...)
 	pb.RegisterSearchServer(srv, s)
 

@@ -15,14 +15,16 @@ It has these top-level messages:
 */
 package search
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import context_bus "github.com/AleckDarcy/ContextBus/proto"
-
 import (
+	fmt "fmt"
+	"github.com/AleckDarcy/ContextBus"
+	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
+
+	cb "github.com/AleckDarcy/ContextBus/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -37,11 +39,11 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type NearbyRequest struct {
-	Lat       float32              `protobuf:"fixed32,1,opt,name=lat" json:"lat,omitempty"`
-	Lon       float32              `protobuf:"fixed32,2,opt,name=lon" json:"lon,omitempty"`
-	InDate    string               `protobuf:"bytes,3,opt,name=inDate" json:"inDate,omitempty"`
-	OutDate   string               `protobuf:"bytes,4,opt,name=outDate" json:"outDate,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	Lat       float32     `protobuf:"fixed32,1,opt,name=lat" json:"lat,omitempty"`
+	Lon       float32     `protobuf:"fixed32,2,opt,name=lon" json:"lon,omitempty"`
+	InDate    string      `protobuf:"bytes,3,opt,name=inDate" json:"inDate,omitempty"`
+	OutDate   string      `protobuf:"bytes,4,opt,name=outDate" json:"outDate,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *NearbyRequest) Reset()                    { *m = NearbyRequest{} }
@@ -77,7 +79,7 @@ func (m *NearbyRequest) GetOutDate() string {
 	return ""
 }
 
-func (m *NearbyRequest) GetCBPayload() *context_bus.Payload {
+func (m *NearbyRequest) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -85,8 +87,8 @@ func (m *NearbyRequest) GetCBPayload() *context_bus.Payload {
 }
 
 type SearchResult struct {
-	HotelIds  []string             `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	HotelIds  []string    `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *SearchResult) Reset()                    { *m = SearchResult{} }
@@ -101,7 +103,7 @@ func (m *SearchResult) GetHotelIds() []string {
 	return nil
 }
 
-func (m *SearchResult) GetCBPayload() *context_bus.Payload {
+func (m *SearchResult) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -149,7 +151,7 @@ func (c *searchClient) Nearby(ctx context.Context, in *NearbyRequest, opts ...gr
 	out := new(SearchResult)
 
 	// ContextBus
-	fmt.Println("Send /search.Search/Nearby request")
+	// fmt.Println("Send /search.Search/Nearby request")
 
 	err := grpc.Invoke(ctx, "/search.Search/Nearby", in, out, c.cc, opts...)
 	if err != nil {
@@ -157,7 +159,7 @@ func (c *searchClient) Nearby(ctx context.Context, in *NearbyRequest, opts ...gr
 	}
 
 	// ContextBus
-	fmt.Println("Receive /search.Search/Nearby response")
+	// fmt.Println("Receive /search.Search/Nearby response")
 
 	return out, nil
 }
@@ -198,9 +200,19 @@ func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 
 	// ContextBus
-	cbFlag := in.CBPayload != nil
-	if cbFlag {
-		fmt.Println("receive /search.Search/Nearby request", in.CBPayload)
+	cbCtx, cbOK := ContextBus.FromPayload(ctx, in.GetCBPayload())
+	_, _ = cbCtx, cbOK
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "Search.Nearby.Handler.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "NearbyHandler starts",
+			Paths:   nil,
+		})
 	}
 
 	if interceptor == nil {
@@ -215,11 +227,18 @@ func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	val, err := interceptor(ctx, in, info, handler)
 	// ContextBus
-	if cbFlag { // todo: do payload
+	if cbOK { // todo: do payload
 		res := val.(*SearchResult)
 
 		_ = res
-		fmt.Println("send /search.Search/Nearby response", val)
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "Search.Nearby.Handler.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "NearbyHandler ends",
+			Paths:   nil,
+		})
 	}
 
 	return val, err

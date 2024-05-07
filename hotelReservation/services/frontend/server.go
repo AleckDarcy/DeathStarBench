@@ -75,7 +75,7 @@ func (s *Server) Run() error {
 
 	log.Trace().Msg("frontend before mux")
 
-	ContextBus.TurnOn()
+	ContextBus.TurnOn("frontend", "jaeger:6831")
 	context_bus.SetDefaultConfigure()
 	mux := cb_http.NewServeMux() // context bus server mux
 	//mux := tracing.NewServeMux(s.Tracer)
@@ -182,10 +182,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx := r.Context()
 
-	// ContextBus
-	cbCtx, cbOK := ContextBus.Preparation(r.Context())
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromHTTP(r.Context())
 
-	// ContextBus
+	// Context Bus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
 			Type: cb.EventRecorderType_EventRecorderServiceHandler,
@@ -252,7 +252,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		Lon:       lon,
 		InDate:    inDate,
 		OutDate:   outDate,
-		CBPayload: cbCtx.Payload(),
+		CBPayload: cbCtx.Payload(), // set ContextBus payload
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
