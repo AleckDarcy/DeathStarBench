@@ -34,6 +34,17 @@ var defaultConfigure = &cb.Configure{
 				ParentName: "",
 			},
 		},
+		"frontend.searchHandler.5": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Name:       "reservationClient.CheckAvailability",
+				PrevName:   "frontend.searchHandler.4",
+				Attrs:      nil,
+				Stacktrace: nil,
+				ParentName: "",
+			},
+		},
 		"Search.Nearby.Handler.1": {
 			Type:    cb.ObservationType_ObservationInter,
 			Logging: cb_configure.DefaultJSONLogging,

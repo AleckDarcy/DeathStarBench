@@ -5,9 +5,8 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
-	"time"
-
 	"strconv"
+	"time"
 
 	"github.com/delimitrou/DeathStarBench/hotelreservation/registry"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/services/search"
@@ -15,6 +14,9 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tune"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 )
 
 func main() {
@@ -64,6 +66,12 @@ func main() {
 		IpAddr:     servIP,
 		KnativeDns: knativeDNS,
 		Registry:   registry,
+		CBConfig: &cb_configure.ServerConfigure{
+			ServiceName:         "search-" + ContextBus.HOSTNAME,
+			JaegerHost:          *jaegerAddr,
+			EnvironmentProfiler: true,
+			ObservationBus:      true,
+		},
 	}
 
 	log.Info().Msg("Starting server...")

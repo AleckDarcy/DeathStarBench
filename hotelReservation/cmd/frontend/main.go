@@ -14,6 +14,9 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tune"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 )
 
 func main() {
@@ -61,6 +64,12 @@ func main() {
 		Tracer:     tracer,
 		IpAddr:     servIP,
 		Port:       servPort,
+		CBConfig: &cb_configure.ServerConfigure{
+			ServiceName:         "frontend-" + ContextBus.HOSTNAME,
+			JaegerHost:          *jaegerAddr,
+			EnvironmentProfiler: true,
+			ObservationBus:      true,
+		},
 	}
 
 	log.Info().Msg("Starting server...")

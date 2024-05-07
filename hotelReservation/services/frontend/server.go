@@ -3,6 +3,7 @@ package frontend
 import (
 	"encoding/json"
 	"fmt"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 	"net/http"
 	"strconv"
 
@@ -43,6 +44,8 @@ type Server struct {
 	Port                 int
 	Tracer               opentracing.Tracer
 	Registry             *registry.Client
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run the server
@@ -75,8 +78,7 @@ func (s *Server) Run() error {
 
 	log.Trace().Msg("frontend before mux")
 
-	ContextBus.TurnOn("frontend", "jaeger:6831")
-	context_bus.SetDefaultConfigure()
+	ContextBus.Set(s.CBConfig, context_bus.SetDefaultConfigure)
 	mux := cb_http.NewServeMux() // context bus server mux
 	//mux := tracing.NewServeMux(s.Tracer)
 	mux.Handle("/", http.FileServer(http.Dir("services/frontend/static")))
@@ -289,6 +291,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		InDate:       inDate,
 		OutDate:      outDate,
 		RoomNumber:   1,
+		CBPayload:    cbCtx.Payload(), // set ContextBus payload
 	})
 	if err != nil {
 		log.Error().Msg("SearchHandler CheckAvailability failed: " + err.Error())

@@ -21,6 +21,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
 const name = "srv-reservation"
@@ -34,6 +38,8 @@ type Server struct {
 	Registry    *registry.Client
 	MemcClient  *memcache.Client
 	uuid        string
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run starts the server
@@ -62,6 +68,7 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
+	ContextBus.Set(s.CBConfig, context_bus.SetDefaultConfigure)
 	srv := grpc.NewServer(opts...)
 
 	pb.RegisterReservationServer(srv, s)

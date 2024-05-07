@@ -3,14 +3,8 @@ package search
 import (
 	// "encoding/json"
 	"fmt"
-	"github.com/AleckDarcy/ContextBus"
-	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
-
 	// F"io/ioutil"
 	"net"
-
-	"github.com/rs/zerolog/log"
-
 	// "os"
 	"time"
 
@@ -23,9 +17,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/rs/zerolog/log"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
 const name = "srv-search"
@@ -41,6 +40,8 @@ type Server struct {
 	KnativeDns string
 	Registry   *registry.Client
 	uuid       string
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run starts the server
@@ -67,8 +68,7 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
-	ContextBus.TurnOn("search", "jaeger:6831")
-	context_bus.SetDefaultConfigure()
+	ContextBus.Set(s.CBConfig, context_bus.SetDefaultConfigure)
 	srv := grpc.NewServer(opts...)
 	pb.RegisterSearchServer(srv, s)
 
