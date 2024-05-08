@@ -33,7 +33,7 @@ services:
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - MEMC_TIMEOUT
       - LOG_LEVEL
     build: .
@@ -68,7 +68,7 @@ services:
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - LOG_LEVEL
     build: .
     image: hotel_reserv_geo_single_node
@@ -83,7 +83,7 @@ services:
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - MEMC_TIMEOUT
       - LOG_LEVEL
     build: .
@@ -100,7 +100,7 @@ services:
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - LOG_LEVEL
     build: .
     image: hotel_reserv_recommend_single_node
@@ -115,7 +115,7 @@ services:
     environment:
       - TLS
       - GC
-      - JAEGER_SAMPLE_RATIO
+      - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - LOG_LEVEL
     build: .
     image: hotel_reserv_user_single_node

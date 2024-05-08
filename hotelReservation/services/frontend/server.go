@@ -3,7 +3,6 @@ package frontend
 import (
 	"encoding/json"
 	"fmt"
-	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 	"net/http"
 	"strconv"
 
@@ -12,7 +11,6 @@ import (
 
 	"github.com/delimitrou/DeathStarBench/hotelreservation/dialer"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/registry"
-	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	profile "github.com/delimitrou/DeathStarBench/hotelreservation/services/profile/proto"
 	recommendation "github.com/delimitrou/DeathStarBench/hotelreservation/services/recommendation/proto"
 	reservation "github.com/delimitrou/DeathStarBench/hotelreservation/services/reservation/proto"
@@ -22,10 +20,11 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tracing"
 	"github.com/opentracing/opentracing-go"
 
-	// _ "github.com/AleckDarcy/ContextBus"
 	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 	cb "github.com/AleckDarcy/ContextBus/proto"
 	cb_http "github.com/AleckDarcy/ContextBus/third-party/go/net/http"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
 // cheat go import
@@ -78,7 +77,7 @@ func (s *Server) Run() error {
 
 	log.Trace().Msg("frontend before mux")
 
-	ContextBus.Set(s.CBConfig, context_bus.SetDefaultConfigure)
+	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
 	mux := cb_http.NewServeMux() // context bus server mux
 	//mux := tracing.NewServeMux(s.Tracer)
 	mux.Handle("/", http.FileServer(http.Dir("services/frontend/static")))
