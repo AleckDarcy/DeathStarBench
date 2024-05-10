@@ -14,19 +14,11 @@ var defaultConfigure = &cb.Configure{
 				Start: true,
 			},
 		},
-		"hotels.2": {
-			Type:    cb.ObservationType_ObservationEnd,
-			Logging: cb_configure.DefaultJSONLogging,
-			Tracing: &cb.TracingConfigure{
-				End:           true,
-				SpanName:      "hotels",
-				PrevEventName: "hotels.1",
-				Attrs:         nil,
-				Stacktrace:    nil,
-				ParentName:    "",
-			},
-		},
 		"frontend.searchHandler.1": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"frontend.searchHandler.2": {
 			Type:    cb.ObservationType_ObservationInter,
 			Logging: cb_configure.DefaultJSONLogging,
 		},
@@ -55,30 +47,291 @@ var defaultConfigure = &cb.Configure{
 			Type:    cb.ObservationType_ObservationInter,
 			Logging: cb_configure.DefaultJSONLogging,
 			Tracing: &cb.TracingConfigure{
+				Start:         true,
 				End:           true,
 				SpanName:      "reservationClient.CheckAvailability",
 				PrevEventName: "frontend.searchHandler.4",
 				Attrs:         nil,
 				Stacktrace:    nil,
+				ParentName:    "hotels.1",
 			},
 		},
-		"Search.Nearby.Handler.1": {
+		"frontend.searchHandler.6": {
 			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "profileClient.GetProfiles",
+				PrevEventName: "frontend.searchHandler.5",
+				Attrs:         nil,
+				Stacktrace:    nil,
+			},
+		},
+		"hotels.2": {
+			Type:    cb.ObservationType_ObservationEnd,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "hotels",
+				PrevEventName: "hotels.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+		"_Search_Nearby_Handler.1": {
+			Type:    cb.ObservationType_ObservationStart,
 			Logging: cb_configure.DefaultJSONLogging,
 			Tracing: &cb.TracingConfigure{
 				Start: true,
 			},
 		},
-		"Search.Nearby.Handler.2": {
+		"search.Nearby.1": {
 			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"search.Nearby.2": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"search.Nearby.3": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Search_Nearby_Handler.1",
+			},
+		},
+		"search.Nearby.4": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start:         true,
+				End:           true,
+				SpanName:      "geoClient.Nearby",
+				PrevEventName: "search.Nearby.3",
+				ParentName:    "_Search_Nearby_Handler.1",
+			},
+		},
+		"search.Nearby.5": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "rateClient.GetRates",
+				PrevEventName: "search.Nearby.4",
+				ParentName:    "_Search_Nearby_Handler.1",
+			},
+		},
+		"search.Nearby.6": {
+			Type: cb.ObservationType_ObservationInter,
+			// Logging: cb_configure.DefaultJSONLogging, // for loop, too many log prints
+		},
+		"_Search_Nearby_Handler.2": {
+			Type:    cb.ObservationType_ObservationEnd,
 			Logging: cb_configure.DefaultJSONLogging,
 			Tracing: &cb.TracingConfigure{
 				End:           true,
 				SpanName:      "Search.Nearby.Handler",
-				PrevEventName: "Search.Nearby.Handler.1",
+				PrevEventName: "_Search_Nearby_Handler.1",
 				Attrs:         nil,
 				Stacktrace:    nil,
 				ParentName:    "",
+			},
+		},
+		"_Reservation_CheckAvailability_Handler.1": {
+			Type:    cb.ObservationType_ObservationStart,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start: true,
+			},
+		},
+		"reservation.CheckAvailability.1": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Reservation_CheckAvailability_Handler.1",
+			},
+		},
+		"reservation.CheckAvailability.2": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "memcached_capacity_get_multi_number",
+				PrevEventName: "reservation.CheckAvailability.1",
+			},
+		},
+		"reservation.CheckAvailability.3": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Reservation_CheckAvailability_Handler.1",
+			},
+		},
+		"reservation.CheckAvailability.4": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "mongodb_capacity_get_multi_number",
+				PrevEventName: "reservation.CheckAvailability.3",
+			},
+		},
+		"reservation.CheckAvailability.5": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Reservation_CheckAvailability_Handler.1",
+			},
+		},
+		"reservation.CheckAvailability.6": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "memcached_reserve_get_multi_number",
+				PrevEventName: "reservation.CheckAvailability.5",
+			},
+		},
+		"_Reservation_CheckAvailability_Handler.2": {
+			Type:    cb.ObservationType_ObservationEnd,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "Reservation.CheckAvailability.Handler",
+				PrevEventName: "_Reservation_CheckAvailability_Handler.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+		"_Profile_GetProfiles_Handler.1": {
+			Type:    cb.ObservationType_ObservationStart,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start: true,
+			},
+		},
+		"profile.GetProfiles.1": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"profile.GetProfiles.2": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Profile_GetProfiles_Handler.1",
+			},
+		},
+		"profile.GetProfiles.3": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "memcached_get_profile",
+				PrevEventName: "profile.GetProfiles.2",
+			},
+		},
+		"profile.GetProfiles.4": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"_Profile_GetProfiles_Handler.2": {
+			Type:    cb.ObservationType_ObservationEnd,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "Profile.GetProfiles.Handler",
+				PrevEventName: "_Profile_GetProfiles_Handler.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+		"_Geo_Nearby_Handler.1": {
+			Type:    cb.ObservationType_ObservationStart,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start: true,
+			},
+		},
+		"geo.Nearby.1": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"geo.Nearby.2": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"geo.Nearby.3": {
+			Type: cb.ObservationType_ObservationInter,
+			// Logging: cb_configure.DefaultJSONLogging, // for loop, too many log prints
+		},
+		"_Geo_Nearby_Handler.2": {
+			Type:    cb.ObservationType_ObservationEnd,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "Geo.Nearby.Handler",
+				PrevEventName: "_Geo_Nearby_Handler.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+		"_Rate_GetRates_Handler.1": {
+			Type:    cb.ObservationType_ObservationStart,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				Start: true,
+			},
+		},
+		"rate.GetRates.1": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				Start:      true,
+				ParentName: "_Rate_GetRates_Handler.1",
+			},
+		},
+		"rate.GetRates.2": {
+			Type: cb.ObservationType_ObservationInter,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "memcached_get_multi_rate",
+				PrevEventName: "rate.GetRates.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+		"rate.GetRates.3": {
+			Type: cb.ObservationType_ObservationInter,
+			// Logging: cb_configure.DefaultJSONLogging, // too long
+		},
+		"rate.GetRates.4": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"rate.GetRates.5": {
+			Type:    cb.ObservationType_ObservationInter,
+			Logging: cb_configure.DefaultJSONLogging,
+		},
+		"_Rate_GetRates_Handler.2": {
+			Type:    cb.ObservationType_ObservationEnd,
+			Logging: cb_configure.DefaultJSONLogging,
+			Tracing: &cb.TracingConfigure{
+				End:           true,
+				SpanName:      "Rate.GetRates.Handler",
+				PrevEventName: "_Rate_GetRates_Handler.1",
+				Attrs:         nil,
+				Stacktrace:    nil,
+				ParentName:    "",
+			},
+		},
+	},
+	Reactions: map[string]*cb.ReactionConfigure{
+		"_Search_Nearby_Handler.2": {
+			Type:   cb.ReactionType_TrafficRouting,
+			Params: nil,
+			PreTree: &cb.PrerequisiteTree{
+				Nodes:   []*cb.PrerequisiteNode{{}},
+				LeafIDs: nil,
 			},
 		},
 	},

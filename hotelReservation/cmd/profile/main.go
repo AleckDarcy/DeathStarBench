@@ -14,6 +14,8 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tune"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 )
 
 func main() {
@@ -72,6 +74,12 @@ func main() {
 		Registry:    registry,
 		MongoClient: mongoClient,
 		MemcClient:  memcClient,
+		CBConfig: &cb_configure.ServerConfigure{
+			ServiceName:         "profile",
+			JaegerHost:          *jaegerAddr,
+			EnvironmentProfiler: true,
+			ObservationBus:      true,
+		},
 	}
 
 	log.Info().Msg("Starting server...")

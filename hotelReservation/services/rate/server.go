@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	cb "github.com/AleckDarcy/ContextBus/proto"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	"net"
 	"sort"
 	"strconv"
@@ -36,6 +40,8 @@ type Server struct {
 	Registry    *registry.Client
 	MemcClient  *memcache.Client
 	uuid        string
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run starts the server
@@ -64,6 +70,7 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
+	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
 	srv := grpc.NewServer(opts...)
 
 	pb.RegisterRateServer(srv, s)
@@ -223,6 +230,9 @@ func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, erro
 
 // GetRates gets rates for hotels for specific date range.
 func (s *Server) GetRates(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
+
 	res := new(pb.Result)
 
 	ratePlans := make(RatePlans, 0)
@@ -233,12 +243,40 @@ func (s *Server) GetRates(ctx context.Context, req *pb.Request) (*pb.Result, err
 		hotelIds = append(hotelIds, hotelID)
 		rateMap[hotelID] = struct{}{}
 	}
+
 	// first check memcached(get-multi)
-	memSpan, _ := opentracing.StartSpanFromContext(ctx, "memcached_get_multi_rate")
-	memSpan.SetTag("span.kind", "client")
+	var memSpan opentracing.Span
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "rate.GetRates.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		memSpan, _ = opentracing.StartSpanFromContext(ctx, "memcached_get_multi_rate")
+		memSpan.SetTag("span.kind", "client")
+	}
 
 	resMap, err := s.MemcClient.GetMulti(hotelIds)
-	memSpan.Finish()
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "rate.GetRates.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		memSpan.Finish()
+	}
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -247,7 +285,19 @@ func (s *Server) GetRates(ctx context.Context, req *pb.Request) (*pb.Result, err
 	} else {
 		for hotelId, item := range resMap {
 			rateStrs := strings.Split(string(item.Value), "\n")
-			log.Trace().Msgf("memc hit, hotelId = %s,rate strings: %v", hotelId, rateStrs)
+
+			if cbOK {
+				ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+					Type: cb.EventRecorderType_EventRecorderServiceHandler,
+					Name: "rate.GetRates.3",
+				}, &cb.EventMessage{
+					Attrs:   nil,
+					Message: fmt.Sprintf("memc hit, hotelId = %s,rate strings: %v", hotelId, rateStrs),
+					Paths:   nil,
+				})
+			} else {
+				log.Trace().Msgf("memc hit, hotelId = %s,rate strings: %v", hotelId, rateStrs)
+			}
 
 			for _, rateStr := range rateStrs {
 				if len(rateStr) != 0 {
@@ -263,8 +313,28 @@ func (s *Server) GetRates(ctx context.Context, req *pb.Request) (*pb.Result, err
 		wg.Add(len(rateMap))
 		for hotelId := range rateMap {
 			go func(id string) {
-				log.Trace().Msgf("memc miss, hotelId = %s", id)
-				log.Trace().Msg("memcached miss, set up mongo connection")
+				if cbOK {
+					ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+						Type: cb.EventRecorderType_EventRecorderServiceHandler,
+						Name: "rate.GetRates.4",
+					}, &cb.EventMessage{
+						Attrs:   nil,
+						Message: fmt.Sprintf("memc miss, hotelId = %s", id),
+						Paths:   nil,
+					})
+
+					ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+						Type: cb.EventRecorderType_EventRecorderServiceHandler,
+						Name: "rate.GetRates.5",
+					}, &cb.EventMessage{
+						Attrs:   nil,
+						Message: "memcached miss, set up mongo connection",
+						Paths:   nil,
+					})
+				} else {
+					log.Info().Msgf("memc miss, hotelId = %s", id)
+					log.Info().Msg("memcached miss, set up mongo connection")
+				}
 
 				mongoSpan, _ := opentracing.StartSpanFromContext(ctx, "mongo_rate")
 				mongoSpan.SetTag("span.kind", "client")

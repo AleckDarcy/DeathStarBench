@@ -3,6 +3,8 @@ package reservation
 import (
 	"context"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	cb "github.com/AleckDarcy/ContextBus/proto"
 	"net"
 	"strconv"
 	"strings"
@@ -303,6 +305,9 @@ func (s *Server) MakeReservation(ctx context.Context, req *pb.Request) (*pb.Resu
 
 // CheckAvailability checks if given information is available
 func (s *Server) CheckAvailability(ctx context.Context, req *pb.Request) (*pb.Result, error) {
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
+
 	res := new(pb.Result)
 	res.HotelId = make([]string, 0)
 
@@ -316,10 +321,38 @@ func (s *Server) CheckAvailability(ctx context.Context, req *pb.Request) (*pb.Re
 		keysMap[hotelId+"_cap"] = struct{}{}
 	}
 
-	capMemSpan, _ := opentracing.StartSpanFromContext(ctx, "memcached_capacity_get_multi_number")
-	capMemSpan.SetTag("span.kind", "client")
+	var capMemSpan opentracing.Span
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "reservation.CheckAvailability.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		capMemSpan, _ = opentracing.StartSpanFromContext(ctx, "memcached_capacity_get_multi_number")
+		capMemSpan.SetTag("span.kind", "client")
+	}
+
 	cacheMemRes, err := s.MemcClient.GetMulti(hotelMemKeys)
-	capMemSpan.Finish()
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "reservation.CheckAvailability.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		capMemSpan.Finish()
+	}
 
 	numCollection := s.MongoClient.Database("reservation-db").Collection("number")
 
@@ -346,8 +379,24 @@ func (s *Server) CheckAvailability(ctx context.Context, req *pb.Request) (*pb.Re
 			queryMissKeys = append(queryMissKeys, strings.Split(k, "_")[0])
 		}
 		var nums []number
-		capMongoSpan, _ := opentracing.StartSpanFromContext(ctx, "mongodb_capacity_get_multi_number")
-		capMongoSpan.SetTag("span.kind", "client")
+
+		var capMongoSpan opentracing.Span
+
+		// ContextBus
+		if cbOK {
+			ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+				Type: cb.EventRecorderType_EventRecorderServiceHandler,
+				Name: "reservation.CheckAvailability.3",
+			}, &cb.EventMessage{
+				Attrs:   nil,
+				Message: "",
+				Paths:   nil,
+			})
+		} else {
+			capMongoSpan, _ = opentracing.StartSpanFromContext(ctx, "mongodb_capacity_get_multi_number")
+			capMongoSpan.SetTag("span.kind", "client")
+		}
+
 		curr, err := numCollection.Find(context.TODO(), bson.D{{"$in", queryMissKeys}})
 		if err != nil {
 			log.Error().Msgf("Failed get reservation number data: ", err)
@@ -356,7 +405,21 @@ func (s *Server) CheckAvailability(ctx context.Context, req *pb.Request) (*pb.Re
 		if err != nil {
 			log.Error().Msgf("Failed get reservation number data: ", err)
 		}
-		capMongoSpan.Finish()
+
+		// ContextBus
+		if cbOK {
+			ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+				Type: cb.EventRecorderType_EventRecorderServiceHandler,
+				Name: "reservation.CheckAvailability.4",
+			}, &cb.EventMessage{
+				Attrs:   nil,
+				Message: "",
+				Paths:   nil,
+			})
+		} else {
+			capMongoSpan.Finish()
+		}
+
 		if err != nil {
 			log.Panic().Msgf("Tried to find hotelId [%v], but got error", misKeys, err.Error())
 		}
@@ -395,15 +458,45 @@ func (s *Server) CheckAvailability(ctx context.Context, req *pb.Request) (*pb.Re
 		hotelId  string
 		checkRes bool
 	}
-	reserveMemSpan, _ := opentracing.StartSpanFromContext(ctx, "memcached_reserve_get_multi_number")
+
+	var reserveMemSpan opentracing.Span
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "reservation.CheckAvailability.5",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		reserveMemSpan, _ = opentracing.StartSpanFromContext(ctx, "memcached_reserve_get_multi_number")
+		reserveMemSpan.SetTag("span.kind", "client")
+	}
+
 	ch := make(chan taskRes)
-	reserveMemSpan.SetTag("span.kind", "client")
 	// check capacity in memcached and mongodb
-	if itemsMap, err := s.MemcClient.GetMulti(reqCommand); err != nil && err != memcache.ErrCacheMiss {
-		reserveMemSpan.Finish()
-		log.Panic().Msgf("Tried to get memc_key [%v], but got memmcached error = %s", reqCommand, err)
+	itemsMap, err := s.MemcClient.GetMulti(reqCommand)
+
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "reservation.CheckAvailability.6",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
 	} else {
 		reserveMemSpan.Finish()
+	}
+
+	if err != nil && err != memcache.ErrCacheMiss {
+
+		log.Panic().Msgf("Tried to get memc_key [%v], but got memmcached error = %s", reqCommand, err)
+	} else {
 		// go through reservation count from memcached
 		go func() {
 			for k, v := range itemsMap {

@@ -3,6 +3,9 @@ package search
 import (
 	// "encoding/json"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	cb "github.com/AleckDarcy/ContextBus/proto"
+
 	// F"io/ioutil"
 	"net"
 	// "os"
@@ -153,32 +156,87 @@ func (s *Server) ResetDB(ctx context.Context, req *pb.NearbyRequest) (*pb.Search
 
 // Nearby returns ids of nearby hotels ordered by ranking algo
 func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchResult, error) {
-	// find nearby hotels
-	log.Trace().Msg("in Search Nearby")
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
 
-	log.Trace().Msgf("nearby lat = %f", req.Lat)
-	log.Trace().Msgf("nearby lon = %f", req.Lon)
+	// find nearby hotels
+	// Context Bus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "search.Nearby.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "in Search Nearby",
+			Paths:   nil,
+		})
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "search.Nearby.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("nearby lat = %f", req.Lat),
+			Paths:   nil,
+		})
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "search.Nearby.3",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("nearby lon = %f", req.Lon),
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("in Search Nearby")
+
+		log.Info().Msgf("nearby lat = %f", req.Lat)
+		log.Info().Msgf("nearby lon = %f", req.Lon)
+	}
 
 	nearby, err := s.geoClient.Nearby(ctx, &geo.Request{
-		Lat: req.Lat,
-		Lon: req.Lon,
+		Lat:       req.Lat,
+		Lon:       req.Lon,
+		CBPayload: cbCtx.Payload(), // set ContextBus payload
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, hid := range nearby.HotelIds {
-		log.Trace().Msgf("get Nearby hotelId = %s", hid)
+	// Context Bus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "search.Nearby.4",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("get Nearby hotelId = %v", nearby.HotelIds),
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("get Nearby hotelId = %v", nearby.HotelIds)
 	}
 
 	// find rates for hotels
 	rates, err := s.rateClient.GetRates(ctx, &rate.Request{
-		HotelIds: nearby.HotelIds,
-		InDate:   req.InDate,
-		OutDate:  req.OutDate,
+		HotelIds:  nearby.HotelIds,
+		InDate:    req.InDate,
+		OutDate:   req.OutDate,
+		CBPayload: cbCtx.Payload(), // set ContextBus payload
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Context Bus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "search.Nearby.5",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
 	}
 
 	// TODO(hw): add simple ranking algo to order hotel ids:
@@ -189,7 +247,19 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 	// build the response
 	res := new(pb.SearchResult)
 	for _, ratePlan := range rates.RatePlans {
-		log.Trace().Msgf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code)
+		// Context Bus
+		if cbOK {
+			ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+				Type: cb.EventRecorderType_EventRecorderServiceHandler,
+				Name: "search.Nearby.6",
+			}, &cb.EventMessage{
+				Attrs:   nil,
+				Message: fmt.Sprintf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code),
+				Paths:   nil,
+			})
+		} else {
+			log.Trace().Msgf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code)
+		}
 		res.HotelIds = append(res.HotelIds, ratePlan.HotelId)
 	}
 	return res, nil

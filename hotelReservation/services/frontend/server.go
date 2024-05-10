@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
-
 	"github.com/delimitrou/DeathStarBench/hotelreservation/dialer"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/registry"
 	profile "github.com/delimitrou/DeathStarBench/hotelreservation/services/profile/proto"
@@ -19,6 +16,8 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tls"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tracing"
 	"github.com/opentracing/opentracing-go"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 
 	"github.com/AleckDarcy/ContextBus"
 	cb_configure "github.com/AleckDarcy/ContextBus/configure"
@@ -184,7 +183,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Context Bus
-	cbCtx, cbOK := ContextBus.FromHTTP(r.Context())
+	cbCtx, cbOK := ContextBus.FromContext(r.Context())
 
 	// Context Bus
 	if cbOK {
@@ -200,15 +199,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		log.Info().Msg("starts searchHandler")
 	}
 
+	params := r.URL.Query()
+
 	// in/out dates from query params
-	inDate, outDate := r.URL.Query().Get("inDate"), r.URL.Query().Get("outDate")
+	inDate, outDate := params.Get("inDate"), params.Get("outDate")
 	if inDate == "" || outDate == "" {
 		http.Error(w, "Please specify inDate/outDate params", http.StatusBadRequest)
 		return
 	}
 
 	// lan/lon from query params
-	sLat, sLon := r.URL.Query().Get("lat"), r.URL.Query().Get("lon")
+	sLat, sLon := params.Get("lat"), params.Get("lon")
 	if sLat == "" || sLon == "" {
 		http.Error(w, "Please specify location params", http.StatusBadRequest)
 		return
@@ -279,7 +280,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	// grab locale from query params or default to en
-	locale := r.URL.Query().Get("locale")
+	locale := params.Get("locale")
 	if locale == "" {
 		locale = "en"
 	}
@@ -314,8 +315,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	// hotel profiles
 	profileResp, err := s.profileClient.GetProfiles(ctx, &profile.Request{
-		HotelIds: reservationResp.HotelId,
-		Locale:   locale,
+		HotelIds:  reservationResp.HotelId,
+		Locale:    locale,
+		CBPayload: cbCtx.Payload(), // set ContextBus payload
 	})
 	if err != nil {
 		log.Error().Msg("SearchHandler GetProfiles failed")

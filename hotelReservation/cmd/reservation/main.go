@@ -16,7 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	cb_configure "github.com/AleckDarcy/ContextBus/configure"
-	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
 func main() {
@@ -76,7 +75,7 @@ func main() {
 		MongoClient: mongoClient,
 		MemcClient:  memcClient,
 		CBConfig: &cb_configure.ServerConfigure{
-			ServiceName:         "reservation-" + context_bus.HOSTNAME,
+			ServiceName:         "reservation",
 			JaegerHost:          *jaegerAddr,
 			EnvironmentProfiler: true,
 			ObservationBus:      true,

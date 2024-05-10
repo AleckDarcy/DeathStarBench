@@ -15,10 +15,15 @@ It has these top-level messages:
 */
 package reservation
 
-import proto "github.com/golang/protobuf/proto"
+import (
+	"github.com/AleckDarcy/ContextBus"
+	cb_context "github.com/AleckDarcy/ContextBus/context"
+	proto "github.com/golang/protobuf/proto"
+	"github.com/rs/zerolog/log"
+)
 import fmt "fmt"
 import math "math"
-import context_bus "github.com/AleckDarcy/ContextBus/proto"
+import cb "github.com/AleckDarcy/ContextBus/proto"
 
 import (
 	context "golang.org/x/net/context"
@@ -37,12 +42,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Request struct {
-	CustomerName string               `protobuf:"bytes,1,opt,name=customerName,proto3" json:"customerName,omitempty"`
-	HotelId      []string             `protobuf:"bytes,2,rep,name=hotelId,proto3" json:"hotelId,omitempty"`
-	InDate       string               `protobuf:"bytes,3,opt,name=inDate,proto3" json:"inDate,omitempty"`
-	OutDate      string               `protobuf:"bytes,4,opt,name=outDate,proto3" json:"outDate,omitempty"`
-	RoomNumber   int32                `protobuf:"varint,5,opt,name=roomNumber,proto3" json:"roomNumber,omitempty"`
-	CBPayload    *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	CustomerName string      `protobuf:"bytes,1,opt,name=customerName,proto3" json:"customerName,omitempty"`
+	HotelId      []string    `protobuf:"bytes,2,rep,name=hotelId,proto3" json:"hotelId,omitempty"`
+	InDate       string      `protobuf:"bytes,3,opt,name=inDate,proto3" json:"inDate,omitempty"`
+	OutDate      string      `protobuf:"bytes,4,opt,name=outDate,proto3" json:"outDate,omitempty"`
+	RoomNumber   int32       `protobuf:"varint,5,opt,name=roomNumber,proto3" json:"roomNumber,omitempty"`
+	CBPayload    *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Request) Reset()                    { *m = Request{} }
@@ -85,7 +90,7 @@ func (m *Request) GetRoomNumber() int32 {
 	return 0
 }
 
-func (m *Request) GetCBPayload() *context_bus.Payload {
+func (m *Request) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -93,8 +98,8 @@ func (m *Request) GetCBPayload() *context_bus.Payload {
 }
 
 type Result struct {
-	HotelId   []string             `protobuf:"bytes,1,rep,name=hotelId,proto3" json:"hotelId,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	HotelId   []string    `protobuf:"bytes,1,rep,name=hotelId,proto3" json:"hotelId,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Result) Reset()                    { *m = Result{} }
@@ -109,7 +114,7 @@ func (m *Result) GetHotelId() []string {
 	return nil
 }
 
-func (m *Result) GetCBPayload() *context_bus.Payload {
+func (m *Result) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -229,17 +234,61 @@ func _Reservation_CheckAvailability_Handler(srv interface{}, ctx context.Context
 	if err := dec(in); err != nil {
 		return nil, err
 	}
+
+	// ContextBus
+	cbCtx, cbOK := ContextBus.FromPayload(ctx, in.GetCBPayload())
+	_, _ = cbCtx, cbOK
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Reservation_CheckAvailability_Handler.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "CheckAvailability starts",
+			Paths:   nil,
+		})
+
+		ctx = context.WithValue(ctx, cb_context.CB_CONTEXT_NAME, cbCtx)
+	} else {
+		log.Info().Msg("CheckAvailability starts")
+	}
+
+	var result interface{}
+	var err error
+
 	if interceptor == nil {
-		return srv.(ReservationServer).CheckAvailability(ctx, in)
+		result, err = srv.(ReservationServer).CheckAvailability(ctx, in)
+	} else {
+		info := &grpc.UnaryServerInfo{
+			Server:     srv,
+			FullMethod: "/reservation.Reservation/CheckAvailability",
+		}
+		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(ReservationServer).CheckAvailability(ctx, req.(*Request))
+		}
+		result, err = interceptor(ctx, in, info, handler)
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/reservation.Reservation/CheckAvailability",
+
+	// ContextBus
+	if cbOK { // todo: do payload
+		res := result.(*Result)
+
+		_ = res
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Reservation_CheckAvailability_Handler.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "CheckAvailability ends",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("CheckAvailability ends")
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReservationServer).CheckAvailability(ctx, req.(*Request))
-	}
-	return interceptor(ctx, in, info, handler)
+
+	return result, err
 }
 
 var _Reservation_serviceDesc = grpc.ServiceDesc{

@@ -3,6 +3,10 @@ package geo
 import (
 	"context"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	cb "github.com/AleckDarcy/ContextBus/proto"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	"net"
 	"time"
 
@@ -36,6 +40,8 @@ type Server struct {
 	Port        int
 	IpAddr      string
 	MongoClient *mongo.Client
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run starts the server
@@ -66,6 +72,7 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
+	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
 	srv := grpc.NewServer(opts...)
 
 	pb.RegisterGeoServer(srv, s)
@@ -99,17 +106,53 @@ func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, erro
 
 // Nearby returns all hotels within a given distance.
 func (s *Server) Nearby(ctx context.Context, req *pb.Request) (*pb.Result, error) {
-	log.Trace().Msgf("In geo Nearby")
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
+
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "geo.Nearby.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "in geo Nearby",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("In geo Nearby")
+	}
 
 	var (
 		points = s.getNearbyPoints(ctx, float64(req.Lat), float64(req.Lon))
 		res    = &pb.Result{}
 	)
 
-	log.Trace().Msgf("geo after getNearbyPoints, len = %d", len(points))
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "geo.Nearby.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: fmt.Sprintf("geo after getNearbyPoints, len = %d", len(points)),
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("geo after getNearbyPoints, len = %d", len(points))
+	}
 
 	for _, p := range points {
-		log.Trace().Msgf("In geo Nearby return hotelId = %s", p.Id())
+		if cbOK {
+			ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+				Type: cb.EventRecorderType_EventRecorderServiceHandler,
+				Name: "geo.Nearby.3",
+			}, &cb.EventMessage{
+				Attrs:   nil,
+				Message: fmt.Sprintf("In geo Nearby return hotelId = %s", p.Id()),
+				Paths:   nil,
+			})
+		} else {
+			log.Trace().Msgf("In geo Nearby return hotelId = %s", p.Id())
+		}
 		res.HotelIds = append(res.HotelIds, p.Id())
 	}
 

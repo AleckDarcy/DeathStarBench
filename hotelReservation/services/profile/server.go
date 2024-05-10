@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/AleckDarcy/ContextBus"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	cb "github.com/AleckDarcy/ContextBus/proto"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	"net"
 	"strconv"
 	"sync"
@@ -34,6 +38,8 @@ type Server struct {
 	MongoClient *mongo.Client
 	Registry    *registry.Client
 	MemcClient  *memcache.Client
+
+	CBConfig *cb_configure.ServerConfigure
 }
 
 // Run starts the server
@@ -64,6 +70,7 @@ func (s *Server) Run() error {
 		opts = append(opts, tlsopt)
 	}
 
+	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
 	srv := grpc.NewServer(opts...)
 
 	pb.RegisterProfileServer(srv, s)
@@ -263,7 +270,22 @@ func (s *Server) ResetDB(ctx context.Context, req *pb.Request) (*pb.Result, erro
 
 // GetProfiles returns hotel profiles for requested IDs
 func (s *Server) GetProfiles(ctx context.Context, req *pb.Request) (*pb.Result, error) {
-	log.Trace().Msgf("In GetProfiles")
+	// ContextBus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "profile.GetProfiles.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "In GetProfiles",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msgf("In GetProfiles")
+	}
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -276,10 +298,38 @@ func (s *Server) GetProfiles(ctx context.Context, req *pb.Request) (*pb.Result, 
 		profileMap[hotelId] = struct{}{}
 	}
 
-	memSpan, _ := opentracing.StartSpanFromContext(ctx, "memcached_get_profile")
-	memSpan.SetTag("span.kind", "client")
+	var memSpan opentracing.Span
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "profile.GetProfiles.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		memSpan, _ = opentracing.StartSpanFromContext(ctx, "memcached_get_profile")
+		memSpan.SetTag("span.kind", "client")
+	}
+
 	resMap, err := s.MemcClient.GetMulti(hotelIds)
-	memSpan.Finish()
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "profile.GetProfiles.3",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "",
+			Paths:   nil,
+		})
+	} else {
+		memSpan.Finish()
+	}
 
 	res := new(pb.Result)
 	hotels := make([]*pb.Hotel, 0)
@@ -332,6 +382,20 @@ func (s *Server) GetProfiles(ctx context.Context, req *pb.Request) (*pb.Result, 
 	wg.Wait()
 
 	res.Hotels = hotels
-	log.Trace().Msgf("In GetProfiles after getting resp")
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderServiceHandler,
+			Name: "profile.GetProfiles.4",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "In GetProfiles after getting resp",
+			Paths:   nil,
+		})
+	} else {
+		log.Trace().Msgf("In GetProfiles after getting resp")
+	}
+
 	return res, nil
 }

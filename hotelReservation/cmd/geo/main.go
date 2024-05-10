@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -66,6 +67,12 @@ func main() {
 		Tracer:      tracer,
 		Registry:    registry,
 		MongoClient: mongoClient,
+		CBConfig: &cb_configure.ServerConfigure{
+			ServiceName:         "geo",
+			JaegerHost:          *jaegerAddr,
+			EnvironmentProfiler: true,
+			ObservationBus:      true,
+		},
 	}
 
 	log.Info().Msg("Starting server...")

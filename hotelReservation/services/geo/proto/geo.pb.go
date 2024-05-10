@@ -15,10 +15,15 @@ It has these top-level messages:
 */
 package geo
 
-import proto "github.com/golang/protobuf/proto"
+import (
+	"github.com/AleckDarcy/ContextBus"
+	cb_context "github.com/AleckDarcy/ContextBus/context"
+	proto "github.com/golang/protobuf/proto"
+	"github.com/rs/zerolog/log"
+)
 import fmt "fmt"
 import math "math"
-import context_bus "github.com/AleckDarcy/ContextBus/proto"
+import cb "github.com/AleckDarcy/ContextBus/proto"
 
 import (
 	context "golang.org/x/net/context"
@@ -38,9 +43,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // The latitude and longitude of the current location.
 type Request struct {
-	Lat       float32              `protobuf:"fixed32,1,opt,name=lat" json:"lat,omitempty"`
-	Lon       float32              `protobuf:"fixed32,2,opt,name=lon" json:"lon,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	Lat       float32     `protobuf:"fixed32,1,opt,name=lat" json:"lat,omitempty"`
+	Lon       float32     `protobuf:"fixed32,2,opt,name=lon" json:"lon,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Request) Reset()                    { *m = Request{} }
@@ -62,7 +67,7 @@ func (m *Request) GetLon() float32 {
 	return 0
 }
 
-func (m *Request) GetCBPayload() *context_bus.Payload {
+func (m *Request) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -70,8 +75,8 @@ func (m *Request) GetCBPayload() *context_bus.Payload {
 }
 
 type Result struct {
-	HotelIds  []string             `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	HotelIds  []string    `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Result) Reset()                    { *m = Result{} }
@@ -86,7 +91,7 @@ func (m *Result) GetHotelIds() []string {
 	return nil
 }
 
-func (m *Result) GetCBPayload() *context_bus.Payload {
+func (m *Result) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -175,17 +180,61 @@ func _Geo_Nearby_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	if err := dec(in); err != nil {
 		return nil, err
 	}
+
+	// ContextBus
+	cbCtx, cbOK := ContextBus.FromPayload(ctx, in.GetCBPayload())
+	_, _ = cbCtx, cbOK
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Geo_Nearby_Handler.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "Nearby starts",
+			Paths:   nil,
+		})
+
+		ctx = context.WithValue(ctx, cb_context.CB_CONTEXT_NAME, cbCtx)
+	} else {
+		log.Info().Msg("Nearby starts")
+	}
+
+	var result interface{}
+	var err error
+
 	if interceptor == nil {
-		return srv.(GeoServer).Nearby(ctx, in)
+		result, err = srv.(GeoServer).Nearby(ctx, in)
+	} else {
+		info := &grpc.UnaryServerInfo{
+			Server:     srv,
+			FullMethod: "/geo.Geo/Nearby",
+		}
+		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(GeoServer).Nearby(ctx, req.(*Request))
+		}
+		result, err = interceptor(ctx, in, info, handler)
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/geo.Geo/Nearby",
+
+	// ContextBus
+	if cbOK { // todo: do payload
+		res := result.(*Result)
+
+		_ = res
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Geo_Nearby_Handler.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "Nearby ends",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("Nearby ends")
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeoServer).Nearby(ctx, req.(*Request))
-	}
-	return interceptor(ctx, in, info, handler)
+
+	return result, err
 }
 
 var _Geo_serviceDesc = grpc.ServiceDesc{

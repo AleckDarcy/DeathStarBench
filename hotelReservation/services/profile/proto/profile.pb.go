@@ -18,10 +18,15 @@ It has these top-level messages:
 */
 package profile
 
-import proto "github.com/golang/protobuf/proto"
+import (
+	"github.com/AleckDarcy/ContextBus"
+	cb_context "github.com/AleckDarcy/ContextBus/context"
+	proto "github.com/golang/protobuf/proto"
+	"github.com/rs/zerolog/log"
+)
 import fmt "fmt"
 import math "math"
-import context_bus "github.com/AleckDarcy/ContextBus/proto"
+import cb "github.com/AleckDarcy/ContextBus/proto"
 
 import (
 	context "golang.org/x/net/context"
@@ -40,9 +45,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Request struct {
-	HotelIds  []string             `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
-	Locale    string               `protobuf:"bytes,2,opt,name=locale" json:"locale,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	HotelIds  []string    `protobuf:"bytes,1,rep,name=hotelIds" json:"hotelIds,omitempty"`
+	Locale    string      `protobuf:"bytes,2,opt,name=locale" json:"locale,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Request) Reset()                    { *m = Request{} }
@@ -64,7 +69,7 @@ func (m *Request) GetLocale() string {
 	return ""
 }
 
-func (m *Request) GetCBPayload() *context_bus.Payload {
+func (m *Request) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -72,8 +77,8 @@ func (m *Request) GetCBPayload() *context_bus.Payload {
 }
 
 type Result struct {
-	Hotels    []*Hotel             `protobuf:"bytes,1,rep,name=hotels" json:"hotels,omitempty"`
-	CBPayload *context_bus.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
+	Hotels    []*Hotel    `protobuf:"bytes,1,rep,name=hotels" json:"hotels,omitempty"`
+	CBPayload *cb.Payload `protobuf:"bytes,10001,opt,name=CBPayload" json:"CBPayload,omitempty"`
 }
 
 func (m *Result) Reset()                    { *m = Result{} }
@@ -88,7 +93,7 @@ func (m *Result) GetHotels() []*Hotel {
 	return nil
 }
 
-func (m *Result) GetCBPayload() *context_bus.Payload {
+func (m *Result) GetCBPayload() *cb.Payload {
 	if m != nil {
 		return m.CBPayload
 	}
@@ -330,17 +335,61 @@ func _Profile_GetProfiles_Handler(srv interface{}, ctx context.Context, dec func
 	if err := dec(in); err != nil {
 		return nil, err
 	}
+
+	// ContextBus
+	cbCtx, cbOK := ContextBus.FromPayload(ctx, in.GetCBPayload())
+	_, _ = cbCtx, cbOK
+
+	// ContextBus
+	if cbOK {
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Profile_GetProfiles_Handler.1",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "GetProfiles starts",
+			Paths:   nil,
+		})
+
+		ctx = context.WithValue(ctx, cb_context.CB_CONTEXT_NAME, cbCtx)
+	} else {
+		log.Info().Msg("GetProfiles starts")
+	}
+
+	var result interface{}
+	var err error
+
 	if interceptor == nil {
-		return srv.(ProfileServer).GetProfiles(ctx, in)
+		result, err = srv.(ProfileServer).GetProfiles(ctx, in)
+	} else {
+		info := &grpc.UnaryServerInfo{
+			Server:     srv,
+			FullMethod: "/profile.Profile/GetProfiles",
+		}
+		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(ProfileServer).GetProfiles(ctx, req.(*Request))
+		}
+		result, err = interceptor(ctx, in, info, handler)
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/profile.Profile/GetProfiles",
+
+	// ContextBus
+	if cbOK { // todo: do payload
+		res := result.(*Result)
+
+		_ = res
+		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+			Type: cb.EventRecorderType_EventRecorderThirdParty,
+			Name: "_Profile_GetProfiles_Handler.2",
+		}, &cb.EventMessage{
+			Attrs:   nil,
+			Message: "GetProfiles ends",
+			Paths:   nil,
+		})
+	} else {
+		log.Info().Msg("GetProfiles ends")
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProfileServer).GetProfiles(ctx, req.(*Request))
-	}
-	return interceptor(ctx, in, info, handler)
+
+	return result, err
 }
 
 var _Profile_serviceDesc = grpc.ServiceDesc{

@@ -16,7 +16,7 @@ services:
       - TLS
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
@@ -35,7 +35,9 @@ services:
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - MEMC_TIMEOUT
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTEXTBUS_ON=${CONTEXTBUS_ON}
+      - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
     image: hotel_reserv_profile_single_node
     entrypoint: ./profile
@@ -58,7 +60,7 @@ services:
       - TLS
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
       # - GRPC_GO_LOG_VERBOSITY_LEVEL=2
@@ -69,7 +71,9 @@ services:
       - TLS
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTEXTBUS_ON=${CONTEXTBUS_ON}
+      - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
     image: hotel_reserv_geo_single_node
     entrypoint: ./geo
@@ -85,7 +89,9 @@ services:
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - MEMC_TIMEOUT
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTEXTBUS_ON=${CONTEXTBUS_ON}
+      - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
     image: hotel_reserv_rate_single_node
     entrypoint: ./rate
@@ -101,7 +107,9 @@ services:
       - TLS
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTEXTBUS_ON=${CONTEXTBUS_ON}
+      - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
     image: hotel_reserv_recommend_single_node
     entrypoint: ./recommendation
@@ -116,7 +124,9 @@ services:
       - TLS
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTEXTBUS_ON=${CONTEXTBUS_ON}
+      - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .
     image: hotel_reserv_user_single_node
     entrypoint: ./user
@@ -132,7 +142,7 @@ services:
       - GC
       - JAEGER_SAMPLE_RATIO=${JAEGER_SAMPLE_RATIO}
       - MEMC_TIMEOUT
-      - LOG_LEVEL
+      - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
     build: .

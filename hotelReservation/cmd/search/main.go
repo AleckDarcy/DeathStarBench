@@ -16,7 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	cb_configure "github.com/AleckDarcy/ContextBus/configure"
-	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
 func main() {
@@ -67,7 +66,7 @@ func main() {
 		KnativeDns: knativeDNS,
 		Registry:   registry,
 		CBConfig: &cb_configure.ServerConfigure{
-			ServiceName:         "search-" + context_bus.HOSTNAME,
+			ServiceName:         "search",
 			JaegerHost:          *jaegerAddr,
 			EnvironmentProfiler: true,
 			ObservationBus:      true,

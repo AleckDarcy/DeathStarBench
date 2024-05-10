@@ -18,6 +18,8 @@ package search
 import (
 	fmt "fmt"
 	"github.com/AleckDarcy/ContextBus"
+	cb_context "github.com/AleckDarcy/ContextBus/context"
+	"github.com/rs/zerolog/log"
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
@@ -207,41 +209,52 @@ func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(inter
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
 			Type: cb.EventRecorderType_EventRecorderThirdParty,
-			Name: "Search.Nearby.Handler.1",
+			Name: "_Search_Nearby_Handler.1",
 		}, &cb.EventMessage{
 			Attrs:   nil,
 			Message: "NearbyHandler starts",
 			Paths:   nil,
 		})
+
+		ctx = context.WithValue(ctx, cb_context.CB_CONTEXT_NAME, cbCtx)
+	} else {
+		log.Info().Msg("NearbyHandler starts")
 	}
 
+	var result interface{}
+	var err error
+
 	if interceptor == nil {
-		return srv.(SearchServer).Nearby(ctx, in)
+		result, err = srv.(SearchServer).Nearby(ctx, in)
+	} else {
+		info := &grpc.UnaryServerInfo{
+			Server:     srv,
+			FullMethod: "/search.Search/Nearby",
+		}
+		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(SearchServer).Nearby(ctx, req.(*NearbyRequest))
+		}
+		result, err = interceptor(ctx, in, info, handler)
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/search.Search/Nearby",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SearchServer).Nearby(ctx, req.(*NearbyRequest))
-	}
-	val, err := interceptor(ctx, in, info, handler)
+
 	// ContextBus
 	if cbOK { // todo: do payload
-		res := val.(*SearchResult)
+		res := result.(*SearchResult)
 
 		_ = res
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
 			Type: cb.EventRecorderType_EventRecorderThirdParty,
-			Name: "Search.Nearby.Handler.2",
+			Name: "_Search_Nearby_Handler.2",
 		}, &cb.EventMessage{
 			Attrs:   nil,
 			Message: "NearbyHandler ends",
 			Paths:   nil,
 		})
+	} else {
+		log.Info().Msg("NearbyHandler ends")
 	}
 
-	return val, err
+	return result, err
 }
 
 var _Search_serviceDesc = grpc.ServiceDesc{
