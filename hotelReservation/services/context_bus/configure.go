@@ -327,11 +327,20 @@ var defaultConfigure = &cb.Configure{
 	},
 	Reactions: map[string]*cb.ReactionConfigure{
 		"_Search_Nearby_Handler.2": {
-			Type:   cb.ReactionType_TrafficRouting,
+			Type:   cb.ReactionType_ReactionPrintLog,
 			Params: nil,
 			PreTree: &cb.PrerequisiteTree{
-				Nodes:   []*cb.PrerequisiteNode{{}},
-				LeafIDs: nil,
+				Nodes: []*cb.PrerequisiteNode{
+					{
+						Id:   0,
+						Type: cb.PrerequisiteNodeType_PrerequisiteAfterObservation_,
+						PrevEvent: &cb.PrerequisiteEvent{
+							Name:    "_Search_Nearby_Handler.1",
+							Latency: 10,
+						},
+					},
+				},
+				LeafIDs: []int64{0},
 			},
 		},
 	},
