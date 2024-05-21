@@ -349,20 +349,41 @@ var defaultConfigure = &cb.Configure{
 func SetConfigureForTesting() {
 	cb_configure.Store.SetDefault(defaultConfigure)
 
-	// bypass tracing
-	cfg := &cb.Configure{
-		Observations: map[string]*cb.ObservationConfigure{},
-	}
-
-	for key, val := range defaultConfigure.Observations {
-		newVal := &cb.ObservationConfigure{
-			Type:    val.Type,
-			Logging: val.Logging,
-			Metrics: val.Metrics,
+	// bypass logging
+	{
+		cfg := &cb.Configure{
+			Observations: map[string]*cb.ObservationConfigure{},
 		}
 
-		cfg.Observations[key] = newVal
+		for key, val := range defaultConfigure.Observations {
+			newVal := &cb.ObservationConfigure{
+				Type:    val.Type,
+				Tracing: val.Tracing,
+				Metrics: val.Metrics,
+			}
+
+			cfg.Observations[key] = newVal
+		}
+
+		cb_configure.Store.SetConfigure(cb_configure.CBCID_LOGGINGYPASS, cfg)
 	}
 
-	cb_configure.Store.SetConfigure(cb_configure.CBCID_TRACEBYPASS, cfg)
+	// bypass tracing
+	{
+		cfg := &cb.Configure{
+			Observations: map[string]*cb.ObservationConfigure{},
+		}
+
+		for key, val := range defaultConfigure.Observations {
+			newVal := &cb.ObservationConfigure{
+				Type:    val.Type,
+				Logging: val.Logging,
+				Metrics: val.Metrics,
+			}
+
+			cfg.Observations[key] = newVal
+		}
+
+		cb_configure.Store.SetConfigure(cb_configure.CBCID_TRACEBYPASS, cfg)
+	}
 }

@@ -5,9 +5,8 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
-	"time"
-
 	"strconv"
+	"time"
 
 	"github.com/delimitrou/DeathStarBench/hotelreservation/registry"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/services/recommendation"

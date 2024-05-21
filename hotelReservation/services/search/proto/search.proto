@@ -8,6 +8,7 @@ import "context_bus/context_bus.proto";
 
 // Search service returns best hotel chocies for a user.
 service Search {
+  rpc GetMetrics(NearbyRequest) returns(context_bus.PerfMetric)
   rpc ResetDB(NearbyRequest) returns (SearchResult);
   rpc Nearby(NearbyRequest) returns (SearchResult);
   // rpc City(CityRequest) returns (SearchResult);

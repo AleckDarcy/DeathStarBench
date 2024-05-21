@@ -195,6 +195,7 @@ func _Search_ResetDB_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+// todo metric
 func _Search_Nearby_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NearbyRequest)
 	if err := dec(in); err != nil {

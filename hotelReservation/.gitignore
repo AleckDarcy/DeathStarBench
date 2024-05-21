@@ -3,3 +3,6 @@
 perf.csv
 
 frontend.txt
+
+*.xlsx
+*.csv

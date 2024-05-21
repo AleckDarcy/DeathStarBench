@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -15,6 +14,8 @@ import (
 	"github.com/delimitrou/DeathStarBench/hotelreservation/tune"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	cb_configure "github.com/AleckDarcy/ContextBus/configure"
 )
 
 func main() {

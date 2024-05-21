@@ -3,6 +3,7 @@ package user
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 	"net"
 	"time"
 
@@ -56,6 +57,13 @@ func (s *Server) Run() error {
 		grpc.UnaryInterceptor(
 			otgrpc.OpenTracingServerInterceptor(s.Tracer),
 		),
+	}
+
+	// todo initialization
+	// ContextBus disable opentracing
+	if context_bus.CONTEXTBUS_ON {
+		fmt.Println("ContextBus is on, disable opentracing interceptor")
+		opts = opts[0 : len(opts)-1]
 	}
 
 	if tlsopt := tls.GetServerOpt(); tlsopt != nil {

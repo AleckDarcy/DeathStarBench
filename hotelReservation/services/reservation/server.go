@@ -3,8 +3,6 @@ package reservation
 import (
 	"context"
 	"fmt"
-	"github.com/AleckDarcy/ContextBus"
-	cb "github.com/AleckDarcy/ContextBus/proto"
 	"net"
 	"strconv"
 	"strings"
@@ -24,7 +22,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
+	"github.com/AleckDarcy/ContextBus"
 	cb_configure "github.com/AleckDarcy/ContextBus/configure"
+	cb "github.com/AleckDarcy/ContextBus/proto"
 	"github.com/delimitrou/DeathStarBench/hotelreservation/services/context_bus"
 )
 
@@ -65,11 +65,18 @@ func (s *Server) Run() error {
 		),
 	}
 
+	// ContextBus initialization
+	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
+	// ContextBus disable opentracing
+	if context_bus.CONTEXTBUS_ON {
+		fmt.Println("ContextBus is on, disable opentracing interceptor")
+		opts = opts[0 : len(opts)-1]
+	}
+
 	if tlsopt := tls.GetServerOpt(); tlsopt != nil {
 		opts = append(opts, tlsopt)
 	}
 
-	context_bus.Set(s.CBConfig, context_bus.SetConfigureForTesting)
 	srv := grpc.NewServer(opts...)
 
 	pb.RegisterReservationServer(srv, s)
