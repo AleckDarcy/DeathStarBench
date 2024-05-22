@@ -2,6 +2,7 @@ package context_bus
 
 import (
 	"fmt"
+	cb "github.com/AleckDarcy/ContextBus/proto"
 	"os"
 	"strconv"
 
@@ -16,12 +17,15 @@ var GOLANG_VERSION = os.Getenv("GOLANG_VERSION")
 var CONTEXTBUS_ON bool
 var CONTEXTBUS_TRACE_SAMPLE_RATIO float64
 
+var MetricSize = 4096
+
 func init() {
 	tmpInt, err := strconv.Atoi(os.Getenv("CONTEXTBUS_ON"))
 	if err != nil {
 		fmt.Println("lookup CONTEXTBUS_ON from env fail:", err)
+	} else {
+		CONTEXTBUS_ON = tmpInt == 1
 	}
-	CONTEXTBUS_ON = tmpInt == 1
 
 	CONTEXTBUS_TRACE_SAMPLE_RATIO, err = strconv.ParseFloat(os.Getenv("CONTEXTBUS_TRACE_SAMPLE_RATIO"), 64)
 	if err != nil {
@@ -43,7 +47,7 @@ func Set(cfg *configure.ServerConfigure, init ...func()) {
 		return
 	}
 
-	fmt.Printf("Initialize ContextBus(HOSTNAME=%s, GOLANG_VERSION=%s, CONTEXTBUS_ON=%v)\n", HOSTNAME, GOLANG_VERSION, CONTEXTBUS_ON)
+	fmt.Printf("Initialize ContextBus(HOSTNAME=%s, GOLANG_VERSION=%s, CONTEXTBUS_ON=%v, PERF_METRIC=%v)\n", HOSTNAME, GOLANG_VERSION, CONTEXTBUS_ON, cb.PERF_METRIC)
 
 	// run background tasks
 	background.Run(cfg)

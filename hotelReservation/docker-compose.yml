@@ -19,6 +19,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_frontend_single_node
     entrypoint: ./frontend
@@ -38,6 +39,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_profile_single_node
     entrypoint: ./profile
@@ -63,6 +65,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
       # - GRPC_GO_LOG_VERBOSITY_LEVEL=2
       # - GRPC_GO_LOG_SEVERITY_LEVEL=info
 
@@ -74,6 +77,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_geo_single_node
     entrypoint: ./geo
@@ -92,6 +96,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_rate_single_node
     entrypoint: ./rate
@@ -110,6 +115,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_recommend_single_node
     entrypoint: ./recommendation
@@ -127,6 +133,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_user_single_node
     entrypoint: ./user
@@ -145,6 +152,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - CONTEXTBUS_ON=${CONTEXTBUS_ON}
       - CONTEXTBUS_TRACE_SAMPLE_RATIO=${CONTEXTBUS_TRACE_SAMPLE_RATIO}
+      - PERF_METRIC=${PERF_METRIC}
     build: .
     image: hotel_reserv_rsv_single_node
     entrypoint: ./reservation

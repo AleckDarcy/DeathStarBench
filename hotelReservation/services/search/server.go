@@ -153,6 +153,29 @@ func (s *Server) getGprcConn(name string) (*grpc.ClientConn, error) {
 	}
 }
 
+var perfMetric *cb.PerfMetric
+
+func init() {
+	if cb.PERF_METRIC {
+		perfMetric = cb.NewPerfMetric(context_bus.MetricSize, cb.Metric_Search_NearBy_Observation_1, cb.Metric_Search_NearBy_Logic_4)
+	}
+}
+
+func (s *Server) GetMetric(ctx context.Context, req *pb.NearbyRequest) (*cb.PerfMetric, error) {
+	log.Info().Msg("get perf metric and reset")
+	if !cb.PERF_METRIC {
+		return nil, nil
+	}
+
+	if perfMetric != nil {
+		res := perfMetric.Calculate()
+
+		return res, nil
+	}
+
+	return nil, nil
+}
+
 func (s *Server) ResetDB(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchResult, error) {
 	log.Info().Msg("reset databases")
 	s.geoClient.ResetDB(ctx, new(geo.Request))
@@ -163,15 +186,14 @@ func (s *Server) ResetDB(ctx context.Context, req *pb.NearbyRequest) (*pb.Search
 
 // Nearby returns ids of nearby hotels ordered by ranking algo
 func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchResult, error) {
-	// Context Bus
-	cbCtx, cbOK := ContextBus.FromContext(ctx)
-	var perf *cb.PerfMetric
-	fmt.Println("payload:", req.CBPayload)
-	if req.CBPayload != nil {
-		perf = req.CBPayload.Metric
+	var s1, e1, s2, e2, s3, e3, e4 time.Time
+	if cb.PERF_METRIC {
+		s1 = time.Now()
 	}
 
-	s1 := time.Now()
+	// Context Bus
+	cbCtx, cbOK := ContextBus.FromContext(ctx)
+
 	// find nearby hotels
 	// Context Bus
 	if cbOK {
@@ -205,9 +227,10 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 		log.Info().Msgf("nearby lat = %f", req.Lat)
 		log.Info().Msgf("nearby lon = %f", req.Lon)
 	}
-	e1 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Observation_1] = float64(e1.UnixNano() - s1.UnixNano())
+
+	if cb.PERF_METRIC {
+		e1 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Observation_1, float64(e1.UnixNano()-s1.UnixNano()))
 	}
 
 	nearby, err := s.geoClient.Nearby(ctx, &geo.Request{
@@ -219,10 +242,11 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 		return nil, err
 	}
 
-	s2 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Logic_2] = float64(s2.UnixNano() - e1.UnixNano())
+	if cb.PERF_METRIC {
+		s2 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Logic_2, float64(s2.UnixNano()-e1.UnixNano()))
 	}
+
 	// Context Bus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -236,9 +260,10 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 	} else {
 		log.Info().Msgf("get Nearby hotelId = %v", nearby.HotelIds)
 	}
-	e2 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Observation_2] = float64(e2.UnixNano() - s2.UnixNano())
+
+	if cb.PERF_METRIC {
+		e2 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Observation_2, float64(e2.UnixNano()-s2.UnixNano()))
 	}
 
 	// find rates for hotels
@@ -248,13 +273,14 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 		OutDate:   req.OutDate,
 		CBPayload: cbCtx.Payload(), // set ContextBus payload
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	s3 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Logic_3] = float64(s3.UnixNano() - e2.UnixNano())
+	if cb.PERF_METRIC {
+		s3 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Logic_3, float64(s3.UnixNano()-e2.UnixNano()))
 	}
 
 	// Context Bus
@@ -268,9 +294,10 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 			Paths:   nil,
 		})
 	}
-	e3 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Observation_3] = float64(e3.UnixNano() - s3.UnixNano())
+
+	if cb.PERF_METRIC {
+		e3 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Observation_3, float64(e3.UnixNano()-s3.UnixNano()))
 	}
 
 	// TODO(hw): add simple ranking algo to order hotel ids:
@@ -281,27 +308,26 @@ func (s *Server) Nearby(ctx context.Context, req *pb.NearbyRequest) (*pb.SearchR
 	// build the response
 	res := new(pb.SearchResult)
 	for _, ratePlan := range rates.RatePlans {
-		// Context Bus
-		if cbOK {
-			ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
-				Type: cb.EventRecorderType_EventRecorderServiceHandler,
-				Name: "search.Nearby.6",
-			}, &cb.EventMessage{
-				Attrs:   nil,
-				Message: fmt.Sprintf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code),
-				Paths:   nil,
-			})
-		} else {
-			log.Trace().Msgf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code)
-		}
+		//// Context Bus
+		//if cbOK {
+		//	ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
+		//		Type: cb.EventRecorderType_EventRecorderServiceHandler,
+		//		Name: "search.Nearby.6",
+		//	}, &cb.EventMessage{
+		//		Attrs:   nil,
+		//		Message: fmt.Sprintf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code),
+		//		Paths:   nil,
+		//	})
+		//} else {
+		//	log.Trace().Msgf("get RatePlan HotelId = %s, Code = %s", ratePlan.HotelId, ratePlan.Code)
+		//}
 		res.HotelIds = append(res.HotelIds, ratePlan.HotelId)
 	}
 
-	e4 := time.Now()
-	if perf != nil {
-		perf.Latency[cb.Metric_Search_NearBy_Observation_4] = float64(e4.UnixNano() - e3.UnixNano())
+	if cb.PERF_METRIC {
+		e4 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Search_NearBy_Logic_4, float64(e4.UnixNano()-e3.UnixNano()))
 	}
-	res.CBPayload = &cb.Payload{Metric: perf} // todo
 
 	return res, nil
 }

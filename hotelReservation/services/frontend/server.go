@@ -3,7 +3,6 @@ package frontend
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AleckDarcy/ContextBus/helper"
 	"net/http"
 	"strconv"
 	"time"
@@ -82,6 +81,7 @@ func (s *Server) Run() error {
 	mux := cb_http.NewServeMux() // context bus server mux
 	//mux := tracing.NewServeMux(s.Tracer)
 	mux.Handle("/", http.FileServer(http.Dir("services/frontend/static")))
+	mux.Handle("/metric", cb_http.NewHandlerFunc(s.getMetric))
 	mux.Handle("/reset", cb_http.NewHandlerFunc(s.resetHandler))
 	mux.Handle("/hotels", cb_http.NewHandlerFunc(s.searchHandler))
 	mux.Handle("/recommendations", cb_http.NewHandlerFunc(s.recommendHandler))
@@ -167,8 +167,36 @@ func (s *Server) getGprcConn(name string) (*grpc.ClientConn, error) {
 	}
 }
 
-func (s *Server) resetMetric(w http.ResponseWriter, r *http.Request) {
+var perfMetric *cb.PerfMetric
 
+func init() {
+	if cb.PERF_METRIC {
+		perfMetric = cb.NewPerfMetric(context_bus.MetricSize, cb.Metric_Frontend_SearchHandler_Logic_1, cb.Metric_Frontend_SearchHandler_Logic_7)
+	}
+}
+
+func (s *Server) getMetric(w http.ResponseWriter, r *http.Request) {
+	if !cb.PERF_METRIC {
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+
+		return
+	}
+
+	ctx := r.Context()
+
+	res := perfMetric.Calculate()
+
+	fmt.Println("frontend metric:", res)
+	sm, _ := s.searchClient.GetMetric(ctx, &search.NearbyRequest{})
+	fmt.Println("search metric:", sm)
+
+	if sm != nil {
+		res.Merge(sm)
+	}
+
+	fmt.Println("merged metric:", res)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{"metric": res})
 }
 
 func (s *Server) resetHandler(w http.ResponseWriter, r *http.Request) {
@@ -185,19 +213,22 @@ func (s *Server) resetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
-	s0 := time.Now()
+	var s0, s1, e1, s2, e2, s3, e3, s4, e4, s5, e5, s6, e6, e7 time.Time
+	if cb.PERF_METRIC {
+		s0 = time.Now()
+	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx := r.Context()
 
-	// Perf Metric
-	perf := &cb.PerfMetric{Latency: make([]float64, cb.Metric_E)}
-
 	// Context Bus
 	cbCtx, cbOK := ContextBus.FromContext(r.Context())
 
-	s1 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_1] = float64(s1.UnixNano() - s0.UnixNano())
+	if cb.PERF_METRIC {
+		s1 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_1, float64(s1.UnixNano()-s0.UnixNano()))
+	}
+
 	// Context Bus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -211,8 +242,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msg("starts searchHandler")
 	}
-	e1 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_1] = float64(e1.UnixNano() - s1.UnixNano())
+
+	if cb.PERF_METRIC {
+		e1 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_1, float64(e1.UnixNano()-s1.UnixNano()))
+	}
 
 	params := r.URL.Query()
 
@@ -235,8 +269,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	Lon, _ := strconv.ParseFloat(sLon, 32)
 	lon := float32(Lon)
 
-	s2 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_2] = float64(s2.UnixNano() - e1.UnixNano())
+	if cb.PERF_METRIC {
+		s2 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_2, float64(s2.UnixNano()-e1.UnixNano()))
+	}
+
 	// ContextBus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -250,10 +287,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msg("starts searchHandler querying downstream")
 	}
-	e2 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_2] = float64(e2.UnixNano() - s2.UnixNano())
 
-	s3 := time.Now()
+	if cb.PERF_METRIC {
+		e2 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_2, float64(e2.UnixNano()-s2.UnixNano()))
+		s3 = time.Now()
+	}
+
 	// ContextBus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -267,16 +307,15 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msgf("SEARCH [lat: %v, lon: %v, inDate: %v, outDate: %v", lat, lon, inDate, outDate)
 	}
-	e3 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_3] = float64(e3.UnixNano() - s3.UnixNano())
+
+	if cb.PERF_METRIC {
+		e3 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_3, float64(e3.UnixNano()-s3.UnixNano()))
+	}
 
 	// search for best hotels
 
 	cbPay := cbCtx.Payload()
-	if cbPay != nil {
-		cbPay.Metric = perf
-		fmt.Println("set perf to payload")
-	}
 	searchResp, err := s.searchClient.Nearby(ctx, &search.NearbyRequest{
 		Lat:       lat,
 		Lon:       lon,
@@ -288,12 +327,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if searchResp.CBPayload != nil && searchResp.CBPayload.Metric != nil {
-		perf = searchResp.CBPayload.Metric
+
+	if cb.PERF_METRIC {
+		s4 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_4, float64(s4.UnixNano()-e3.UnixNano()))
 	}
 
-	s4 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_4] = float64(s4.UnixNano() - e3.UnixNano())
 	// ContextBus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -307,8 +346,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msg("SearchHandler gets searchResp")
 	}
-	e4 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_4] = float64(e4.UnixNano() - s4.UnixNano())
+
+	if cb.PERF_METRIC {
+		e4 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_4, float64(e4.UnixNano()-s4.UnixNano()))
+	}
 
 	//for _, hid := range searchResp.HotelIds {
 	//	log.Trace().Msgf("Search Handler hotelId = %s", hid)
@@ -334,8 +376,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s5 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_5] = float64(s5.UnixNano() - e4.UnixNano())
+	if cb.PERF_METRIC {
+		s5 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_5, float64(s5.UnixNano()-e4.UnixNano()))
+	}
+
 	// ContextBus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -349,8 +394,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msgf("searchHandler gets reserveResp.HotelId = %s", reservationResp.HotelId)
 	}
-	e5 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_5] = float64(e5.UnixNano() - s5.UnixNano())
+
+	if cb.PERF_METRIC {
+		e5 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_5, float64(e5.UnixNano()-s5.UnixNano()))
+	}
 
 	// hotel profiles
 	profileResp, err := s.profileClient.GetProfiles(ctx, &profile.Request{
@@ -364,8 +412,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s6 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_6] = float64(s6.UnixNano() - e5.UnixNano())
+	if cb.PERF_METRIC {
+		s6 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_6, float64(s6.UnixNano()-e5.UnixNano()))
+	}
+
 	// ContextBus
 	if cbOK {
 		ContextBus.OnSubmission(cbCtx, &cb.EventWhere{}, &cb.EventRecorder{
@@ -379,17 +430,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Msg("searchHandler gets profileResp")
 	}
-	e6 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_6] = float64(e6.UnixNano() - s6.UnixNano())
+
+	if cb.PERF_METRIC {
+		e6 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_6, float64(e6.UnixNano()-s6.UnixNano()))
+	}
 
 	rsp := geoJSONResponse(profileResp.Hotels)
 
-	e7 := time.Now()
-	perf.Latency[cb.Metric_Frontend_SearchHandler_Logic_7] = float64(e7.UnixNano() - e6.UnixNano())
-	b, _ := json.Marshal(perf.Latency)
-	rsp["latency"] = helper.BytesToString(b)
-
 	json.NewEncoder(w).Encode(rsp)
+
+	if cb.PERF_METRIC {
+		e7 = time.Now()
+		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_7, float64(e7.UnixNano()-e6.UnixNano()))
+	}
 }
 
 func (s *Server) recommendHandler(w http.ResponseWriter, r *http.Request) {

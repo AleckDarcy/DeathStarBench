@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package context_bus;
 
-option go_package = "github.com/AleckDarcy/ContextBus/proto";
+option go_package = "proto";
 
 enum ConditionOperator {
     ConditionOperator_ = 0;
@@ -58,8 +58,9 @@ enum LogicType {
 enum PrerequisiteNodeType {
     PrerequisiteNodeType_ = 0;
 
-    PrerequisiteMessage_ = 1;
-    PrerequisiteLogic_   = 2;
+    PrerequisiteMessage_            = 1;
+    PrerequisiteLogic_              = 2;
+    PrerequisiteAfterObservation_   = 3;
 }
 
 message ConditionTree {
@@ -74,6 +75,11 @@ message PrerequisiteMessage {
     int64 parent        = 100;
 }
 
+message PrerequisiteEvent {
+    string name   = 1;
+    int64 latency = 2; // in ms
+}
+
 message PrerequisiteLogic {
     LogicType type = 1;
 
@@ -85,7 +91,8 @@ message PrerequisiteNode {
     int64  id                   = 1; // for tree indexing
     PrerequisiteNodeType type   = 2;
     PrerequisiteMessage message = 3;
-    PrerequisiteLogic logic     = 4;
+    PrerequisiteEvent prevEvent = 4;
+    PrerequisiteLogic logic     = 5;
 }
 
 // prerequisite tree
@@ -107,13 +114,17 @@ enum ReactionType {
     ReactionType_ = 0;
 
     // fault injection
-    FaultCrash = 1;
-    FaultDelay = 2;
-    FaultDrop  = 3;
+    ReactionFaultCrash = 1;
+    ReactionFaultDelay = 2;
+    ReactionFaultDrop  = 3;
 
     // traffic (e.g., load-balancing, traffic shaping)
-    TrafficBalance = 101;
-    TrafficRouting = 102;
+    ReactionTrafficBalance = 101;
+    ReactionTrafficRouting = 102;
+
+    // Notification & alert
+    ReactionPrintLog = 1001;
+    ReactionEmail    = 1002;
 }
 
 message FaultDelayParam {
@@ -180,12 +191,14 @@ message LoggingConfigure {
 }
 
 message TracingConfigure {
-    string name                       = 1;
-    string prev_name                  = 2; // event pair
-    repeated AttributeConfigure attrs = 3;
-    StackTraceConfigure stacktrace    = 4;
+    bool start                        = 1; // start of a span
+    bool end                          = 2; // end of a span
+    string span_name                  = 3; // span name
+    string prev_event_name            = 4; // event pair
+    repeated AttributeConfigure attrs = 5;
+    StackTraceConfigure stacktrace    = 6;
 
-    string parent_name = 11; // span name
+    string parent_name = 11; // parent span name
 }
 
 enum MetricType {
@@ -477,6 +490,10 @@ message PrometheusConfiguration {
 }
 
 /******************** Integration ********************/
+message PerfMetric {
+    repeated double latency = 1;
+}
+
 message Payload {
     // workflow-level
     int64 request_id                = 1;
@@ -488,4 +505,6 @@ message Payload {
     SpanMetadata parent = 11;
     MessageType m_type  = 12;
     string uuid         = 13;
+
+    PerfMetric metric = 21;
 }
