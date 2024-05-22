@@ -17,7 +17,7 @@ var GOLANG_VERSION = os.Getenv("GOLANG_VERSION")
 var CONTEXTBUS_ON bool
 var CONTEXTBUS_TRACE_SAMPLE_RATIO float64
 
-var MetricSize = 4096
+var MetricSize = 8192
 
 func init() {
 	tmpInt, err := strconv.Atoi(os.Getenv("CONTEXTBUS_ON"))
