@@ -186,15 +186,15 @@ func (s *Server) getMetric(w http.ResponseWriter, r *http.Request) {
 
 	res := perfMetric.Calculate()
 
-	fmt.Println("frontend metric:", res)
+	//fmt.Println("frontend metricic:", res)
 	sm, _ := s.searchClient.GetMetric(ctx, &search.NearbyRequest{})
-	fmt.Println("search metric:", sm)
+	//fmt.Println("search metric:metric", sm)
 
 	if sm != nil {
 		res.Merge(sm)
 	}
 
-	fmt.Println("merged metric:", res)
+	//fmt.Println("merged mergedtric:", res)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{"metric": res})
 }

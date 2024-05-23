@@ -336,7 +336,7 @@ var defaultConfigure = &cb.Configure{
 						Type: cb.PrerequisiteNodeType_PrerequisiteAfterObservation_,
 						PrevEvent: &cb.PrerequisiteEvent{
 							Name:    "_Search_Nearby_Handler.1",
-							Latency: 10,
+							Latency: 50,
 						},
 					},
 				},
@@ -349,10 +349,29 @@ var defaultConfigure = &cb.Configure{
 func SetConfigureForTesting() {
 	cb_configure.Store.SetDefault(defaultConfigure)
 
+	// bypass observation
+	{
+		cfg := &cb.Configure{
+			Observations: map[string]*cb.ObservationConfigure{},
+			Reactions:    defaultConfigure.Reactions,
+		}
+
+		for key, val := range defaultConfigure.Observations {
+			newVal := &cb.ObservationConfigure{
+				Type: val.Type,
+			}
+
+			cfg.Observations[key] = newVal
+		}
+
+		cb_configure.Store.SetConfigure(cb_configure.CBCID_OBSERVATIONBYPASS, cfg)
+	}
+
 	// bypass logging
 	{
 		cfg := &cb.Configure{
 			Observations: map[string]*cb.ObservationConfigure{},
+			Reactions:    defaultConfigure.Reactions,
 		}
 
 		for key, val := range defaultConfigure.Observations {
@@ -372,6 +391,7 @@ func SetConfigureForTesting() {
 	{
 		cfg := &cb.Configure{
 			Observations: map[string]*cb.ObservationConfigure{},
+			Reactions:    defaultConfigure.Reactions,
 		}
 
 		for key, val := range defaultConfigure.Observations {
