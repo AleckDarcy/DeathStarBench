@@ -336,7 +336,7 @@ var defaultConfigure = &cb.Configure{
 						Type: cb.PrerequisiteNodeType_PrerequisiteAfterObservation_,
 						PrevEvent: &cb.PrerequisiteEvent{
 							Name:    "_Search_Nearby_Handler.1",
-							Latency: 50,
+							Latency: 200,
 						},
 					},
 				},

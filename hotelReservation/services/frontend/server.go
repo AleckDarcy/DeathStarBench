@@ -167,11 +167,9 @@ func (s *Server) getGprcConn(name string) (*grpc.ClientConn, error) {
 	}
 }
 
-var perfMetric *cb.PerfMetric
-
 func init() {
 	if cb.PERF_METRIC {
-		perfMetric = cb.NewPerfMetric(context_bus.MetricSize, cb.Metric_Frontend_SearchHandler_Logic_1, cb.Metric_Frontend_SearchHandler_Logic_7)
+		cb.PMetric = cb.NewPerfMetric(cb.MetricSize, cb.Metric_Frontend_SearchHandler_Logic_1, cb.Metric_Frontend_SearchHandler_Logic_7)
 	}
 }
 
@@ -184,7 +182,7 @@ func (s *Server) getMetric(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	res := perfMetric.Calculate()
+	res := cb.PMetric.Calculate()
 
 	//fmt.Println("frontend metricic:", res)
 	sm, _ := s.searchClient.GetMetric(ctx, &search.NearbyRequest{})
@@ -226,7 +224,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		s1 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_1, float64(s1.UnixNano()-s0.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_1, float64(s1.UnixNano()-s0.UnixNano()))
 	}
 
 	// Context Bus
@@ -245,7 +243,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e1 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_1, float64(e1.UnixNano()-s1.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_1, float64(e1.UnixNano()-s1.UnixNano()))
 	}
 
 	params := r.URL.Query()
@@ -271,7 +269,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		s2 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_2, float64(s2.UnixNano()-e1.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_2, float64(s2.UnixNano()-e1.UnixNano()))
 	}
 
 	// ContextBus
@@ -290,7 +288,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e2 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_2, float64(e2.UnixNano()-s2.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_2, float64(e2.UnixNano()-s2.UnixNano()))
 		s3 = time.Now()
 	}
 
@@ -310,7 +308,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e3 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_3, float64(e3.UnixNano()-s3.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_3, float64(e3.UnixNano()-s3.UnixNano()))
 	}
 
 	// search for best hotels
@@ -330,7 +328,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		s4 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_4, float64(s4.UnixNano()-e3.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_4, float64(s4.UnixNano()-e3.UnixNano()))
 	}
 
 	// ContextBus
@@ -349,7 +347,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e4 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_4, float64(e4.UnixNano()-s4.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_4, float64(e4.UnixNano()-s4.UnixNano()))
 	}
 
 	//for _, hid := range searchResp.HotelIds {
@@ -378,7 +376,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		s5 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_5, float64(s5.UnixNano()-e4.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_5, float64(s5.UnixNano()-e4.UnixNano()))
 	}
 
 	// ContextBus
@@ -397,7 +395,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e5 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_5, float64(e5.UnixNano()-s5.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_5, float64(e5.UnixNano()-s5.UnixNano()))
 	}
 
 	// hotel profiles
@@ -414,7 +412,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		s6 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_6, float64(s6.UnixNano()-e5.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_6, float64(s6.UnixNano()-e5.UnixNano()))
 	}
 
 	// ContextBus
@@ -433,7 +431,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e6 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_6, float64(e6.UnixNano()-s6.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_6, float64(e6.UnixNano()-s6.UnixNano()))
 	}
 
 	rsp := geoJSONResponse(profileResp.Hotels)
@@ -442,7 +440,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if cb.PERF_METRIC {
 		e7 = time.Now()
-		perfMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_7, float64(e7.UnixNano()-e6.UnixNano()))
+		cb.PMetric.AddLatency(cb.Metric_Frontend_SearchHandler_Logic_7, float64(e7.UnixNano()-e6.UnixNano()))
 	}
 }
 
