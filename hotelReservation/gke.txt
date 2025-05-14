@@ -47,6 +47,7 @@ kubectl apply -Rf kubernetes
 kubectl delete all --all
 
 kubectl get pods
+kubectl exec -it <pod-name> -- env
 kubectl get svc
 
 kubectl exec -it pod-name -- sh

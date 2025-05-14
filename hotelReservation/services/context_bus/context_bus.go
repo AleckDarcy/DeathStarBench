@@ -18,16 +18,16 @@ var CONTEXTBUS_ON bool
 var CONTEXTBUS_TRACE_SAMPLE_RATIO float64
 
 func init() {
-	tmpInt, err := strconv.Atoi(os.Getenv("CONTEXTBUS_ON"))
+	tmpInt, err := strconv.Atoi(os.Getenv("CB_CONTEXTBUS_ON"))
 	if err != nil {
-		fmt.Println("lookup CONTEXTBUS_ON from env fail:", err)
+		fmt.Println("lookup CB_CONTEXTBUS_ON from env fail:", err)
 	} else {
 		CONTEXTBUS_ON = tmpInt == 1
 	}
 
-	CONTEXTBUS_TRACE_SAMPLE_RATIO, err = strconv.ParseFloat(os.Getenv("CONTEXTBUS_TRACE_SAMPLE_RATIO"), 64)
+	CONTEXTBUS_TRACE_SAMPLE_RATIO, err = strconv.ParseFloat(os.Getenv("CB_CONTEXTBUS_TRACE_SAMPLE_RATIO"), 64)
 	if err != nil {
-		fmt.Println("lookup CONTEXTBUS_TRACE_SAMPLE_RATIO from env fail:", err)
+		fmt.Println("lookup CB_CONTEXTBUS_TRACE_SAMPLE_RATIO from env fail:", err)
 		CONTEXTBUS_TRACE_SAMPLE_RATIO = 0.01
 	}
 }
