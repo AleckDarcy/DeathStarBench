@@ -28,7 +28,7 @@ spec:
       containers:
         - command:
             - ./profile
-          image: aleck123/hotelreservation:latest
+          image: aleck123/cb_dsb_hotelreservation:latest
           name: hotel-reserv-profile
           ports:
             - containerPort: 8081
@@ -37,5 +37,8 @@ spec:
               cpu: 100m
             limits:
               cpu: 1000m
+          envFrom:
+            - configMapRef:
+                name: cb-config
       restartPolicy: Always
 status: {}

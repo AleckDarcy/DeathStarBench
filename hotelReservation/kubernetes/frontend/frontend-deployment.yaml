@@ -28,7 +28,7 @@ spec:
       containers:
         - command:
             - ./frontend
-          image: aleck123/hotelreservation:latest
+          image: aleck123/cb_dsb_hotelreservation:latest
           name: hotel-reserv-frontend
           ports:
             - containerPort: 5001
@@ -37,5 +37,10 @@ spec:
               cpu: 100m
             limits:
               cpu: 1000m
+          envFrom:
+            - configMapRef:
+                name: cb-config
+      imagePullSecrets:
+        - name: regcred
       restartPolicy: Always
 status: {}
